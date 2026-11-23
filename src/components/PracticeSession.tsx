@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2,
-  Clock,
   HelpCircle,
   Lightbulb,
   LogOut,
-  ShieldCheck,
   AlertTriangle,
   Sparkles,
 } from 'lucide-react';
@@ -18,9 +16,8 @@ import {
   formatElapsedTime,
   normalizeDigitsToLatin,
   toPersianDigits,
-  getMedalForScore,
 } from '../data/narenjData';
-import { V3PillButton, MedalIcon } from './V3Stickers';
+import { V3PillButton } from './V3Stickers';
 import { SessionSummaryData } from './SessionSummary';
 
 interface PracticeSessionProps {
@@ -122,12 +119,10 @@ export function PracticeSession({
     isCorrect: boolean;
     delta: number;
   } | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [showExitModal, setShowExitModal] = useState(false);
 
   const currentQuestion = questions[session.currentIndex];
   const isLastQuestion = session.currentIndex >= questions.length - 1;
-  const medal = getMedalForScore(session.smartScore);
 
   // Elapsed count-up timer (pauses while exit modal is open)
   useEffect(() => {
@@ -215,7 +210,6 @@ export function PracticeSession({
     }
 
     setValidationError(null);
-    setSaveStatus('saving');
 
     // SmartScore progression: Hint usage NEVER penalizes score (Binding rule §5)
     const remainingQuestions = Math.max(1, questions.length - session.currentIndex);
@@ -244,8 +238,6 @@ export function PracticeSession({
     setSession(nextSession);
     onUpdateActiveSession(nextSession);
     setSubmittedResult({ isCorrect: check.isCorrect, delta: check.isCorrect ? gain : -drop });
-
-    window.setTimeout(() => setSaveStatus('saved'), 180);
   };
 
   const buildSummary = (state: ActivePracticeState): SessionSummaryData => {
@@ -289,48 +281,18 @@ export function PracticeSession({
 
   return (
     <div className="max-w-[880px] mx-auto py-4 md:py-7 px-4">
-      {/* Compact Secondary Session Header (Score & Time visually secondary per §16.9) */}
+      {/* Compact Secondary Session Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-6 border-b border-[#e0dbce]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[#686562]">
             <span>{skill.topicTitle}</span>
-            <span aria-hidden="true">·</span>
-            <span>
-              سوال {toPersianDigits(session.currentIndex + 1)} از {toPersianDigits(questions.length)}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="text-[#9e3908]">محتوای نمونه آموزشی</span>
           </div>
           <h1 className="text-lg md:text-xl font-bold text-[#1d1d1b] mt-0.5 truncate">
             {skill.title}
           </h1>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-5 shrink-0">
-          {/* Count-up Elapsed Timer */}
-          <div
-            className="flex items-center gap-1.5 text-sm text-[#3c3c3c] tabular-nums"
-            title="زمان سپری‌شده (بدون محدودیت زمانی)"
-          >
-            <Clock className="w-4 h-4 text-[#686562]" />
-            <span>{formatElapsedTime(session.elapsedSeconds)}</span>
-          </div>
-
-          {/* Secondary SmartScore Meter */}
-          <div className="flex items-center gap-2 bg-[#f5f1e4] px-3 py-1.5 rounded-[14px] border border-[#e0dbce]">
-            <MedalIcon tier={medal.tier} size={20} />
-            <span className="text-xs text-[#686562]">امتیاز هوشمند:</span>
-            <span className="text-sm font-bold text-[#1d1d1b] tabular-nums">
-              {toPersianDigits(session.smartScore)}
-            </span>
-          </div>
-
-          {/* Save indicator */}
-          <span className="hidden sm:inline-flex items-center gap-1 text-xs text-[#686562]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#59982c]" />
-            <span>{saveStatus === 'saving' ? 'در حال ذخیره...' : 'ذخیره شد'}</span>
-          </span>
-
+        <div className="flex items-center gap-3 shrink-0">
           {/* Always-reachable Safe Exit */}
           <button
             type="button"
@@ -340,6 +302,74 @@ export function PracticeSession({
             <LogOut className="w-4 h-4" />
             <span>خروج امن</span>
           </button>
+
+          {/* Count-up Elapsed Timer (Positioned on the left with custom Narenj V3 stopwatch design) */}
+          <div
+            className="h-10 pl-3.5 pr-1.5 rounded-[14px] bg-[#f5f1e4] border border-[#e0dbce] inline-flex items-center gap-2.5 shrink-0"
+            title="زمان سپری‌شده (بدون محدودیت زمانی)"
+          >
+            <span
+              className="w-7 h-7 rounded-[10px] bg-white border border-[#e0dbce]/80 inline-flex items-center justify-center shrink-0"
+              aria-hidden="true"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Top crown button */}
+                <path
+                  d="M9.5 2.75H14.5"
+                  stroke="#ff5c0c"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M12 2.75V5.25"
+                  stroke="#ff5c0c"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                {/* Side reset stem */}
+                <path
+                  d="M17.8 6.4L19.4 4.8"
+                  stroke="#ff9d6d"
+                  strokeWidth="2.1"
+                  strokeLinecap="round"
+                />
+                {/* Main dial body */}
+                <circle
+                  cx="12"
+                  cy="13.25"
+                  r="7.75"
+                  fill="#fff2eb"
+                  stroke="#ff5c0c"
+                  strokeWidth="2"
+                />
+                {/* Subtle dial quarter ticks */}
+                <circle cx="12" cy="8.2" r="0.85" fill="#ff9d6d" />
+                <circle cx="17.05" cy="13.25" r="0.85" fill="#ff9d6d" />
+                <circle cx="12" cy="18.3" r="0.85" fill="#ff9d6d" />
+                <circle cx="6.95" cy="13.25" r="0.85" fill="#ff9d6d" />
+                {/* Active stopwatch hand */}
+                <path
+                  d="M12 13.25L14.85 10.4"
+                  stroke="#1d1d1b"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <circle cx="12" cy="13.25" r="1.45" fill="#ff5c0c" />
+              </svg>
+            </span>
+            <span
+              dir="ltr"
+              className="text-sm font-bold text-[#1d1d1b] tracking-wide tabular-nums leading-none"
+            >
+              {formatElapsedTime(session.elapsedSeconds)}
+            </span>
+          </div>
         </div>
       </div>
 
