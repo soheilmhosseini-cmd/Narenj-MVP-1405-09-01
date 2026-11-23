@@ -28,6 +28,7 @@ import {
   toPersianDigits,
 } from '../data/narenjData';
 import { NarenjBrandMark, V3PillButton } from './V3Stickers';
+import { WeeklyActivityChart } from './WeeklyActivityChart';
 
 type TeacherView = 'home' | 'library' | 'assignments' | 'builder' | 'tracking' | 'analytics';
 
@@ -303,7 +304,7 @@ export function TeacherWorkspace({
                 <img
                   src={teacherAvatarSrc}
                   alt={teacher.fullName}
-                  className="w-16 h-16 rounded-full object-cover object-top border-2 border-[#ffcbb1]"
+                  className="w-16 h-16 rounded-full object-contain"
                   referrerPolicy="no-referrer"
                 />
                 <div>
@@ -372,6 +373,13 @@ export function TeacherWorkspace({
               </div>
             </section>
 
+            {/* Weekly Activity Chart — 7-day Average SmartScore Trend */}
+            <WeeklyActivityChart
+              classId={activeClass.id}
+              className={activeClass.name}
+              students={studentsInClass}
+            />
+
             {/* Two-Column Action Focus: Needs Support + Active Assignments */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-6 rounded-[24px] border border-[#e0dbce] bg-white p-6 space-y-4">
@@ -401,7 +409,7 @@ export function TeacherWorkspace({
                             <img
                               src={resolveAvatarSrc(stu.avatarId, 'student')}
                               alt={stu.name}
-                              className="w-10 h-10 rounded-full object-cover object-top shrink-0"
+                              className="w-10 h-10 rounded-full object-contain shrink-0"
                               referrerPolicy="no-referrer"
                             />
                             <div className="min-w-0">
@@ -1124,7 +1132,7 @@ export function TeacherWorkspace({
                     <img
                       src={resolveAvatarSrc(selectedStudentReport.avatarId, 'student')}
                       alt={selectedStudentReport.name}
-                      className="w-16 h-16 rounded-full object-cover object-top border-2 border-white"
+                      className="w-16 h-16 rounded-full object-contain"
                       referrerPolicy="no-referrer"
                     />
                     <div>
@@ -1187,8 +1195,15 @@ export function TeacherWorkspace({
                 </div>
               </div>
             ) : (
-              /* TCH-18 Class Analytics — Distinguishes Assigned vs Free Practice (BM-IXL-004) */
-              <div className="rounded-[24px] border border-[#e0dbce] bg-white overflow-hidden">
+              /* TCH-18 Class Analytics — Weekly Activity Chart + Roster distinguishing Assigned vs Free Practice */
+              <div className="space-y-6">
+                <WeeklyActivityChart
+                  classId={activeClass.id}
+                  className={activeClass.name}
+                  students={studentsInClass}
+                />
+
+                <div className="rounded-[24px] border border-[#e0dbce] bg-white overflow-hidden">
                 <div className="px-6 py-4 bg-[#f5f1e4] flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-bold text-[#1d1d1b]">
                     <Users className="w-4 h-4 text-[#ff5c0c]" />
@@ -1236,6 +1251,7 @@ export function TeacherWorkspace({
                       ))}
                     </tbody>
                   </table>
+                </div>
                 </div>
               </div>
             )}

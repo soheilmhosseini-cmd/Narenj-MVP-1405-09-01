@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
   ChevronDown,
+  ChevronLeft,
   ChevronUp,
   Home,
   LogOut,
-  Menu,
   Search,
   Settings,
   TrendingUp,
@@ -30,13 +30,10 @@ import {
   formatElapsedTime,
   getMasteryLevel,
   getMedalForScore,
-  resolveAvatarSrc,
   toPersianDigits,
 } from '../data/narenjData';
 import {
   MedalIcon,
-  NarenjBrandMark,
-  StickerCorrect,
   StickerSubmitted,
   V3PillButton,
 } from './V3Stickers';
@@ -118,18 +115,90 @@ export function StudentWorkspace({
   const practiceSkill =
     SKILLS_CATALOG.find((s) => s.id === activeSession?.skillId) ?? SKILLS_CATALOG[0];
 
-  const avatarSrc = resolveAvatarSrc(student.avatarId, 'student');
-
   const handleLaunchSkill = (skillId: string, assignmentId?: string) => {
     onStartOrResumeSkill(skillId, assignmentId);
     setView('practice');
     setDrawerOpen(false);
   };
 
+  const [displayedCoins, setDisplayedCoins] = useState(student.coins);
+  const [coinCelebration, setCoinCelebration] = useState<{
+    amount: number;
+    stage: 'enter' | 'visible' | 'exit';
+    pulse: boolean;
+  } | null>(null);
+  const prevCoinsRef = useRef(student.coins);
+  const celebrationTimersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    return () => {
+      celebrationTimersRef.current.forEach((id) => window.clearTimeout(id));
+    };
+  }, []);
+
+  // Smoothly roll displayed header coin balance when student.coins increases
+  useEffect(() => {
+    const startVal = prevCoinsRef.current;
+    const endVal = student.coins;
+    prevCoinsRef.current = endVal;
+
+    if (endVal <= startVal) {
+      setDisplayedCoins(endVal);
+      return;
+    }
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setDisplayedCoins(endVal);
+      return;
+    }
+
+    const duration = 620;
+    const startTime = performance.now();
+    let rafId = 0;
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      // Ease-out cubic settling curve
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayedCoins(Math.round(startVal + (endVal - startVal) * eased));
+      if (progress < 1) {
+        rafId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [student.coins]);
+
   const handleSessionFinished = (summary: SessionSummaryData) => {
     onCompleteSession(summary);
     setLastSummary(summary);
     setView('summary');
+
+    if (summary.coinsEarned > 0) {
+      celebrationTimersRef.current.forEach((id) => window.clearTimeout(id));
+      celebrationTimersRef.current = [];
+
+      setCoinCelebration({ amount: summary.coinsEarned, stage: 'enter', pulse: false });
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setCoinCelebration({ amount: summary.coinsEarned, stage: 'visible', pulse: true });
+        });
+      });
+      const t1 = window.setTimeout(() => {
+        setCoinCelebration((prev) => (prev ? { ...prev, pulse: false } : null));
+      }, 520);
+      const t2 = window.setTimeout(() => {
+        setCoinCelebration((prev) => (prev ? { ...prev, stage: 'exit' } : null));
+      }, 2200);
+      const t3 = window.setTimeout(() => {
+        setCoinCelebration(null);
+      }, 2700);
+      celebrationTimersRef.current = [t1, t2, t3];
+    }
   };
 
   const handleSessionPaused = (saved: ActivePracticeState) => {
@@ -137,12 +206,12 @@ export function StudentWorkspace({
     setView('home');
   };
 
-  const breadcrumbLabel: Record<StudentView, string> = {
-    home: 'فضای یادگیری  ›  خانه من',
-    library: 'فضای یادگیری  ›  کتابخانه مهارت‌ها',
-    progress: 'فضای یادگیری  ›  مسیر رشد من',
-    practice: `فضای یادگیری  ›  جلسه تمرین`,
-    summary: 'فضای یادگیری  ›  نتیجه تمرین',
+  const breadcrumbPageTitle: Record<StudentView, string> = {
+    home: 'خانه من',
+    library: 'کتابخانه مهارت‌ها',
+    progress: 'مسیر رشد من',
+    practice: 'جلسه تمرین',
+    summary: 'نتیجه تمرین',
   };
 
   // Filtered skills for STU-02 Library
@@ -187,111 +256,107 @@ export function StudentWorkspace({
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       {/* Narenj Design System V3 Page 11 Top Bar */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-[#e0dbce]">
-        <div className="w-full pr-0 pl-4 md:pl-7 h-[78px] flex items-center justify-between gap-4">
-          {/* RTL Start Zone: V3 Sharp-Cornered Orange Menu Square Flush Top-Right + Student Profile */}
-          <div className="flex items-center gap-3 md:gap-5 min-w-0 h-full">
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="باز کردن منوی ناوبری"
-              className="w-[78px] h-full rounded-none bg-[#ff5c0c] hover:bg-[#ec5c17] text-white inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer self-start"
-            >
-              <Menu className="w-7 h-7" />
-            </button>
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
+        {/* Sharp-Cornered Orange Menu Square Flush Top-Right (Morphs 3-line <-> X) */}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen((prev) => !prev)}
+          data-open={drawerOpen ? 'true' : 'false'}
+          aria-expanded={drawerOpen}
+          aria-label={drawerOpen ? 'بستن منوی ناوبری' : 'باز کردن منوی ناوبری'}
+          className="narenj-menu-trigger top-0 right-0 w-[78px] h-[78px] rounded-none inline-flex items-center justify-center shrink-0 cursor-pointer z-10"
+        >
+          <span className="narenj-hamburger" aria-hidden="true">
+            <span className="narenj-hamburger-bar narenj-hamburger-bar--1" />
+            <span className="narenj-hamburger-bar narenj-hamburger-bar--2" />
+            <span className="narenj-hamburger-bar narenj-hamburger-bar--3" />
+          </span>
+        </button>
 
+        <div className="max-w-[1200px] mx-auto pr-[92px] pl-5 md:pl-9 min-[1360px]:pr-9 h-[78px] flex items-center justify-between gap-4">
+          {/* RTL Start Zone: Aligned with right edge of inner content components */}
+          <div className="flex items-center gap-3 md:gap-5 min-w-0">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => setShowSettings(true)}
-                className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#ffcbb1] shrink-0 bg-[#fff2eb] cursor-pointer"
+                className="w-11 h-11 rounded-full overflow-hidden shrink-0 cursor-pointer"
                 title="تغییر آواتار و تنظیمات"
               >
                 <img
-                  src={avatarSrc}
+                  src="/images/ui/ui-17.svg"
                   alt={`${student.firstName} ${student.lastName}`}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
               </button>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                  <span className="font-bold text-[#1d1d1b]">{student.firstName}</span>
-                  <span className="text-[#d5d5d4]" aria-hidden="true">
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-sm font-bold text-[#1d1d1b]">{student.firstName}</span>
+                  <span className="text-xs text-[#d5d5d4]" aria-hidden="true">
                     /
                   </span>
-                  <span className="text-[#686562] hidden sm:inline">{student.className}</span>
+                  <span className="text-xs font-semibold text-[#686562] hidden sm:inline">
+                    {student.className}
+                  </span>
                 </div>
-                <p className="text-xs text-[#686562] truncate">{breadcrumbLabel[view]}</p>
               </div>
             </div>
 
-            {/* V3 Coin Callout (matches Page 11: تا حالا ۲۴۷۰ سکه جمع کردی!) */}
-            <div className="hidden lg:flex items-center mr-4 text-sm font-semibold text-[#ff5c0c] whitespace-nowrap shrink-0 tabular-nums">
-              تا حالا {toPersianDigits(student.coins)} سکه جمع کردی!
+            {/* V3 Coin Callout with CSS Transition Celebration on Session Completion */}
+            <div className="hidden lg:flex items-center mr-1 relative whitespace-nowrap shrink-0">
+              <span
+                className={`narenj-coin-counter inline-flex items-center gap-1.5 text-xs font-semibold text-[#ff5c0c] tabular-nums ${
+                  coinCelebration?.pulse ? 'narenj-coin-counter--burst text-[#c74809]' : ''
+                }`}
+              >
+                تا حالا {toPersianDigits(displayedCoins)} سکه جمع کردی!
+              </span>
+
+              {coinCelebration && (
+                <span
+                  data-stage={coinCelebration.stage}
+                  aria-live="polite"
+                  className="narenj-coin-delta pointer-events-none mr-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f9f4ae] border border-[#f5e211] text-xs font-bold text-[#9e3908] tabular-nums"
+                >
+                  +{toPersianDigits(coinCelebration.amount)} سکه
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Center Nav Links (Desktop — clean typography, single-line) */}
-          {view !== 'practice' && (
-            <nav
-              aria-label="مسیرهای یادگیری"
-              className="hidden md:flex items-center gap-7 text-sm font-semibold text-[#3c3c3c]"
-            >
-              <button
-                type="button"
-                onClick={() => setView('home')}
-                className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
-                  view === 'home'
-                    ? 'text-[#ff5c0c] border-[#ff5c0c]'
-                    : 'border-transparent hover:text-[#1d1d1b]'
-                }`}
-              >
-                خانه من
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('library')}
-                className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
-                  view === 'library'
-                    ? 'text-[#ff5c0c] border-[#ff5c0c]'
-                    : 'border-transparent hover:text-[#1d1d1b]'
-                }`}
-              >
-                کتابخانه مهارت‌ها
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('progress')}
-                className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
-                  view === 'progress'
-                    ? 'text-[#ff5c0c] border-[#ff5c0c]'
-                    : 'border-transparent hover:text-[#1d1d1b]'
-                }`}
-              >
-                مسیر رشد من
-              </button>
-            </nav>
-          )}
-
-          {/* RTL End Zone: Official V3 Narenj Brand Mark */}
+          {/* RTL End Zone: Official V3 Narenj Brand Mark aligned with left edge of inner content */}
           <button
             type="button"
             onClick={() => {
               if (view !== 'practice') setView('home');
             }}
-            className="cursor-pointer"
+            className="cursor-pointer shrink-0 inline-flex items-center"
             aria-label="بازگشت به خانه نارنج"
           >
-            <NarenjBrandMark />
+            <img
+              src="/images/ui/ui-18.svg"
+              alt="نارنج"
+              className="h-11 w-auto object-contain block"
+              referrerPolicy="no-referrer"
+            />
           </button>
         </div>
       </header>
 
-      {/* V3 Page 11 Floating Left Accessibility & Utility Rail (Official SVGs 19–22) */}
+      {/* Breadcrumb positioned slightly higher, aligned with inner content right edge */}
+      <div className="w-full max-w-[1200px] mx-auto px-5 md:px-9 -mt-2 pb-1">
+        <p className="inline-flex items-center gap-1.5 text-xs text-[#686562]">
+          <span>فضای یادگیری</span>
+          <ChevronLeft className="w-3.5 h-3.5 text-[#686562] shrink-0" aria-hidden="true" />
+          <span>{breadcrumbPageTitle[view]}</span>
+        </p>
+      </div>
+
+      {/* V3 Page 11 Floating Left Accessibility & Utility Rail (Official SVGs 19–22 with Curtain Hover Motion) */}
       <aside
         aria-label="ابزارهای دسترس‌پذیری و اعلان‌ها"
-        className="hidden xl:flex flex-col items-center gap-2 fixed left-0 top-1/2 -translate-y-1/2 z-20"
+        className="hidden xl:flex flex-col items-start gap-1 fixed left-0 top-1/2 -translate-y-1/2 z-20"
       >
         <button
           type="button"
@@ -299,18 +364,30 @@ export function StudentWorkspace({
             setShowNotifications((v) => !v);
             setUnreadNotifications(0);
           }}
+          data-active={showNotifications ? 'true' : 'false'}
           aria-label="اعلان‌ها"
           title="اعلان‌ها"
-          className="relative w-14 h-14 p-0 block hover:brightness-95 transition-all cursor-pointer overflow-visible"
+          className="narenj-rail-btn inline-flex items-center justify-center cursor-pointer overflow-visible"
         >
-          <img
-            src="/images/ui/aside-19.svg"
-            alt="اعلان‌ها"
-            className="w-full h-full block object-cover"
-            referrerPolicy="no-referrer"
-          />
+          <span className="narenj-rail-btn__curtain" aria-hidden="true" />
+          <svg
+            viewBox="0 0 25.5 25.5"
+            className="narenj-rail-btn__icon w-14 h-14 block"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M9.7,10.8c0.1-1.2,1.1-2.1,2.2-2.1l0.3,0l0-0.4c0-0.3,0.2-0.5,0.5-0.5c0.3,0,0.5,0.2,0.5,0.5l0,0.4l0.3,0c1.2,0,2.1,0.9,2.2,2.1l0.1,1.9c0,0.7,0.3,1.4,0.7,2c0.4,0.5,0,1.3-0.6,1.3l-1.8,0.2l0,0.6c0,0.8-0.7,1.4-1.5,1.4c-0.8,0-1.4-0.7-1.4-1.5l0-0.6l-1.8-0.2c-0.6-0.1-1-0.8-0.6-1.3c0.4-0.6,0.6-1.3,0.7-2L9.7,10.8z M11.9,9.5c-0.8,0-1.4,0.6-1.4,1.3l-0.1,1.9c-0.1,0.9-0.3,1.7-0.8,2.4c0,0,0,0.1,0,0.1l2,0.2c0.8,0.1,1.6,0.1,2.4,0l2-0.2c0,0,0.1-0.1,0-0.1c-0.5-0.7-0.8-1.5-0.8-2.4L15,10.8c0-0.8-0.7-1.3-1.4-1.3L11.9,9.5z M12.7,17.4c-0.4,0-0.7-0.3-0.7-0.7l0-0.4l1.3,0l0,0.4C13.4,17.1,13.1,17.4,12.7,17.4z"
+            />
+            <path
+              fill="currentColor"
+              d="M15.7,7.4c-0.2,0.1-0.2,0.4,0,0.6l0.7,0.8c0.3,0.3,0.4,0.7,0.4,1.1l0,1.4c0,0.2,0.2,0.4,0.4,0.4c0.2,0,0.4-0.2,0.4-0.4l0-1.4c0-0.6-0.2-1.2-0.6-1.6l-0.7-0.8C16.2,7.3,15.9,7.3,15.7,7.4z"
+            />
+          </svg>
           {unreadNotifications > 0 && (
-            <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#ff5c0c] text-white text-[11px] font-bold inline-flex items-center justify-center tabular-nums">
+            <span className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-[#ff5c0c] text-white text-[11px] font-bold inline-flex items-center justify-center tabular-nums">
               {toPersianDigits(unreadNotifications)}
             </span>
           )}
@@ -319,52 +396,66 @@ export function StudentWorkspace({
         <button
           type="button"
           onClick={() => setShowSettings(true)}
+          data-active={showSettings ? 'true' : 'false'}
           aria-label="تنظیمات و آواتار"
           title="تنظیمات و آواتار"
-          className="w-14 h-14 p-0 block hover:brightness-95 transition-all cursor-pointer"
+          className="narenj-rail-btn inline-flex items-center justify-center cursor-pointer"
         >
-          <img
-            src="/images/ui/aside-20.svg"
-            alt="تنظیمات"
-            className="w-full h-full block object-cover"
-            referrerPolicy="no-referrer"
-          />
+          <span className="narenj-rail-btn__curtain" aria-hidden="true" />
+          <svg
+            viewBox="0 0 25.5 25.5"
+            className="narenj-rail-btn__icon w-14 h-14 block"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M17.4,11.4c-0.1,0.1-0.1,0.2-0.2,0.3c-0.2,0.1-0.4,0.2-0.6,0.4c-0.2,0.1-0.3,0.3-0.2,0.5c0,0.1,0,0.3,0,0.4c0,0.2,0.1,0.4,0.3,0.5c0.2,0.1,0.4,0.2,0.5,0.3c0.2,0.1,0.3,0.3,0.2,0.5c-0.1,0.2-0.2,0.4-0.3,0.6c-0.1,0.2-0.2,0.3-0.4,0.2c-0.2,0-0.4-0.1-0.6-0.1c-0.2-0.1-0.4,0-0.5,0.2c-0.1,0.1-0.2,0.2-0.3,0.3C15,15.6,15,15.7,15,15.9c0.1,0.2,0.1,0.4,0.1,0.6c0.1,0.3,0,0.4-0.3,0.5c-0.2,0.1-0.4,0.2-0.6,0.3c-0.2,0.1-0.4,0-0.5-0.2c-0.1-0.2-0.2-0.4-0.4-0.5c-0.1-0.2-0.3-0.3-0.5-0.2c-0.1,0-0.3,0-0.4,0c-0.2,0-0.4,0.1-0.5,0.2c-0.1,0.2-0.2,0.3-0.3,0.5c-0.1,0.2-0.3,0.3-0.6,0.2c-0.2-0.1-0.4-0.2-0.6-0.2c-0.2-0.1-0.3-0.2-0.2-0.5c0-0.2,0.1-0.4,0.1-0.6c0.1-0.2,0-0.4-0.2-0.6c-0.1-0.1-0.2-0.2-0.3-0.3C9.9,15,9.8,15,9.6,15c-0.2,0.1-0.4,0.1-0.6,0.1c-0.3,0.1-0.4,0-0.5-0.3c-0.1-0.2-0.2-0.4-0.3-0.6c-0.1-0.2,0-0.4,0.2-0.5c0.2-0.1,0.4-0.2,0.5-0.3c0.2-0.1,0.3-0.3,0.3-0.5c0-0.1,0-0.3,0-0.4c0-0.2-0.1-0.3-0.2-0.4c-0.2-0.1-0.4-0.2-0.5-0.3c-0.2-0.1-0.3-0.3-0.2-0.5c0.1-0.2,0.2-0.4,0.3-0.6c0.1-0.2,0.2-0.3,0.4-0.2c0.2,0,0.5,0.1,0.7,0.1c0.2,0,0.4,0,0.5-0.1c0.1-0.1,0.2-0.2,0.3-0.3c0.1-0.1,0.2-0.3,0.1-0.4c-0.1-0.2-0.1-0.4-0.2-0.7c-0.1-0.3,0-0.4,0.3-0.5c0.2-0.1,0.4-0.2,0.6-0.2c0.2-0.1,0.4,0,0.5,0.2c0.1,0.2,0.2,0.4,0.4,0.5c0.1,0.2,0.3,0.2,0.4,0.2c0.1,0,0.3,0,0.4,0c0.2,0,0.4-0.1,0.5-0.3c0.1-0.2,0.2-0.3,0.3-0.5c0.1-0.2,0.3-0.3,0.5-0.2c0.2,0.1,0.4,0.2,0.6,0.3c0.2,0.1,0.3,0.2,0.2,0.4c0,0.2-0.1,0.4-0.1,0.6c0,0.2,0,0.4,0.2,0.5c0.1,0.1,0.2,0.2,0.3,0.3c0.1,0.1,0.3,0.2,0.5,0.1c0.2-0.1,0.4-0.1,0.7-0.2c0.2-0.1,0.4,0,0.5,0.3c0.1,0.2,0.2,0.4,0.2,0.6C17.3,11.2,17.3,11.3,17.4,11.4C17.3,11.4,17.4,11.4,17.4,11.4z M14.7,12.7c0-1.1-0.9-1.9-1.9-1.9c-1.1,0-1.9,0.9-1.9,1.9c0,1.1,0.9,1.9,1.9,2C13.8,14.7,14.7,13.8,14.7,12.7z"
+            />
+          </svg>
         </button>
 
         <button
           type="button"
           onClick={onToggleHighContrast}
+          data-active={highContrast ? 'true' : 'false'}
           aria-pressed={highContrast}
           aria-label="تغییر کنتراست نمایش"
           title="حالت کنتراست بالا"
-          className={`w-14 h-14 p-0 block hover:brightness-95 transition-all cursor-pointer ${
-            highContrast ? 'ring-2 ring-inset ring-[#ff5c0c]' : ''
-          }`}
+          className="narenj-rail-btn inline-flex items-center justify-center cursor-pointer"
         >
-          <img
-            src="/images/ui/aside-21.svg"
-            alt="تغییر کنتراست نمایش"
-            className="w-full h-full block object-cover"
-            referrerPolicy="no-referrer"
-          />
+          <span className="narenj-rail-btn__curtain" aria-hidden="true" />
+          <svg
+            viewBox="0 0 25.5 25.5"
+            className="narenj-rail-btn__icon w-14 h-14 block"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M17.1,12.7c0-2.4-1.9-4.3-4.3-4.3l0,0l0,0l0,0c-0.9,0-1.7,0.3-2.4,0.7c-0.1,0.1-0.2,0.2-0.3,0.2c-1,0.8-1.6,2-1.6,3.3S9,15.3,10,16.1c0.1,0.1,0.2,0.2,0.3,0.2c0.7,0.5,1.5,0.7,2.4,0.7l0,0l0,0l0,0C15.1,17.1,17.1,15.1,17.1,12.7z M12.8,16.7V8.8c2.2,0,4,1.8,4,4S14.9,16.7,12.8,16.7z"
+            />
+          </svg>
         </button>
 
         <button
           type="button"
           onClick={onToggleLargeText}
+          data-active={largeText ? 'true' : 'false'}
           aria-pressed={largeText}
           aria-label="بزرگ‌نمایی متن"
           title="بزرگ‌نمایی متن برای خوانایی بیشتر"
-          className={`w-14 h-14 p-0 block hover:brightness-95 transition-all cursor-pointer ${
-            largeText ? 'ring-2 ring-inset ring-[#ff5c0c]' : ''
-          }`}
+          className="narenj-rail-btn inline-flex items-center justify-center cursor-pointer"
         >
-          <img
-            src="/images/ui/aside-22.svg"
-            alt="بزرگ‌نمایی متن"
-            className="w-full h-full block object-cover"
-            referrerPolicy="no-referrer"
-          />
+          <span className="narenj-rail-btn__curtain" aria-hidden="true" />
+          <svg
+            viewBox="0 0 25.5 25.5"
+            className="narenj-rail-btn__icon w-14 h-14 block"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M11.6,7.8c-2.1,0-3.8,1.7-3.8,3.8c0,2.1,1.7,3.8,3.8,3.8c1,0,1.8-0.4,2.5-1l0.2,0.2l-0.2,0.2c-0.1,0.1-0.1,0.3,0,0.4l2.3,2.3c0.1,0.1,0.1,0.1,0.2,0.1c0.1,0,0.1,0,0.2-0.1l0.7-0.8c0.1-0.1,0.1-0.3,0-0.4l-2.3-2.3c-0.1-0.1-0.1-0.1-0.2-0.1c-0.1,0-0.1,0-0.2,0.1l-0.2,0.2l-0.2-0.2c0.6-0.7,1-1.6,1-2.5C15.4,9.5,13.7,7.8,11.6,7.8z M11.6,8.3c1.8,0,3.2,1.5,3.2,3.3s-1.5,3.3-3.2,3.3s-3.2-1.5-3.2-3.3S9.9,8.3,11.6,8.3z M11.7,9.5c-0.9,0-1.7,0.6-2,1.4c0,0.1,0,0.3,0.1,0.3c0,0,0.1,0,0.1,0c0.1,0,0.2-0.1,0.2-0.2c0.2-0.6,0.8-1.1,1.5-1.1c0.1,0,0.2-0.1,0.2-0.2C11.9,9.6,11.8,9.5,11.7,9.5z M9.9,11.8c-0.1,0-0.2,0.1-0.2,0.2v0c0,0.1,0.1,0.2,0.3,0.2c0.1,0,0.2-0.1,0.2-0.2v0C10.1,11.9,10,11.8,9.9,11.8L9.9,11.8z M15.1,14.8l1.9,1.9L16.6,17l-1.9-1.9L15.1,14.8z"
+            />
+          </svg>
         </button>
       </aside>
 
@@ -419,7 +510,7 @@ export function StudentWorkspace({
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <V3PillButton
                     type="button"
-                    size="lg"
+                    size="md"
                     onClick={() => handleLaunchSkill(primarySkill.id, primaryAssignment?.id)}
                   >
                     {activeSession ? 'ادامه تمرین ذخیره شده' : 'شروع تمرین'}
@@ -427,6 +518,7 @@ export function StudentWorkspace({
 
                   <V3PillButton
                     type="button"
+                    size="md"
                     variant="secondary"
                     showArrow={false}
                     onClick={() => setView('library')}
@@ -438,7 +530,12 @@ export function StudentWorkspace({
 
               <div className="lg:col-span-4 flex items-center justify-center">
                 <div className="narenj-tray p-5 w-full max-w-[260px] flex flex-col items-center text-center gap-3 border border-[#e0dbce]">
-                  <StickerCorrect className="w-24 h-24" />
+                  <img
+                    src="/images/ui/ui-23.svg"
+                    alt="استیکر هدف بعدی"
+                    className="w-24 h-24 object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                   <div>
                     <p className="text-sm font-bold text-[#1d1d1b]">هدف بعدی تو</p>
                     <p className="text-xs text-[#686562] mt-0.5">
@@ -974,46 +1071,24 @@ export function StudentWorkspace({
         )}
       </main>
 
-      {/* Slide-out Navigation Drawer (Triggered by V3 Orange Hamburger Button) */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-[#1d1d1b]/40"
-            onClick={() => setDrawerOpen(false)}
-            aria-hidden="true"
-          />
-          <aside className="relative z-10 w-80 max-w-[85vw] bg-white h-full shadow-2xl border-l border-[#e0dbce] p-6 flex flex-col justify-between">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <NarenjBrandMark compact />
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(false)}
-                  aria-label="بستن منو"
-                  className="w-9 h-9 rounded-full hover:bg-[#f5f1e4] inline-flex items-center justify-center cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="narenj-cream-card p-4 flex items-center gap-3">
-                <img
-                  src={avatarSrc}
-                  alt={student.firstName}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-white"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="min-w-0">
-                  <p className="font-bold text-[#1d1d1b] truncate">
-                    {student.firstName} {student.lastName}
-                  </p>
-                  <p className="text-xs text-[#686562]">{student.className}</p>
-                  <p className="text-xs font-bold text-[#ff5c0c] mt-0.5 tabular-nums">
-                    {toPersianDigits(student.coins)} سکه
-                  </p>
-                </div>
-              </div>
-
+      {/* Slide-out Navigation Drawer (Synchronized below top-right morphing menu button) */}
+      <div
+        aria-hidden={!drawerOpen}
+        className={`fixed inset-x-0 top-[78px] bottom-0 z-30 flex transition-opacity duration-300 ${
+          drawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div
+          className="fixed inset-x-0 top-[78px] bottom-0 bg-[#1d1d1b]/35"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+        <aside
+          className={`relative z-10 w-80 max-w-[85vw] bg-white h-full shadow-2xl border-l border-[#e0dbce] p-6 flex flex-col justify-between transition-transform duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+            drawerOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="space-y-6">
               <nav className="space-y-1.5">
                 {[
                   { id: 'home', label: 'خانه من و تکلیف‌ها', icon: Home },
@@ -1088,10 +1163,9 @@ export function StudentWorkspace({
                 <LogOut className="w-4 h-4" />
                 <span>خروج از حساب کاربری</span>
               </button>
-            </div>
-          </aside>
-        </div>
-      )}
+          </div>
+        </aside>
+      </div>
 
       {/* Notifications Popover */}
       {showNotifications && (
@@ -1174,7 +1248,7 @@ export function StudentWorkspace({
                         <img
                           src={av.src}
                           alt={av.label}
-                          className="w-full aspect-square rounded-full object-cover object-top"
+                          className="w-full aspect-square rounded-full object-contain"
                           referrerPolicy="no-referrer"
                         />
                       </button>

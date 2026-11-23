@@ -306,9 +306,9 @@ export function AuthScreen({ onLogin }: AuthScreenProps) {
             </div>
             <div className="narenj-tray p-4 flex flex-col items-center text-center gap-2 border border-[#e0dbce]/80">
               <img
-                src="/images/characters/girl/girl-01.jpg"
-                alt="شخصیت دانش‌آموز نارنج"
-                className="w-20 h-20 rounded-full object-cover border-2 border-[#ffcbb1]"
+                src="/images/ui/ui-17.svg"
+                alt="آواتار دانش‌آموز نارنج"
+                className="w-20 h-20 rounded-full object-contain"
                 referrerPolicy="no-referrer"
               />
               <span className="text-xs font-bold text-[#1d1d1b]">آواتار اختصاصی تو</span>

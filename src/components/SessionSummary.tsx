@@ -1,5 +1,5 @@
-import React from 'react';
-import { Award, Clock, RotateCcw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Clock, RotateCcw } from 'lucide-react';
 import {
   SkillRecord,
   toPersianDigits,
@@ -10,8 +10,6 @@ import {
 } from '../data/narenjData';
 import {
   StickerSubmitted,
-  StickerCorrect,
-  StickerAttention,
   V3CornerBadge,
   V3PillButton,
   MedalIcon,
@@ -50,6 +48,63 @@ export function SessionSummary({
   const medal = getMedalForScore(summary.finalSmartScore);
   const mastery = getMasteryLevel(summary.finalSmartScore, summary.answeredCount);
   const masteryMeta = MASTERY_META[mastery];
+
+  const [coinStage, setCoinStage] = useState<'initial' | 'pop' | 'settled'>('initial');
+  const [animatedEarned, setAnimatedEarned] = useState(
+    summary.coinsEarned > 0 ? 0 : summary.coinsEarned
+  );
+
+  // Trigger staged CSS transition animation when coins are earned on session completion
+  useEffect(() => {
+    if (summary.coinsEarned <= 0) {
+      setCoinStage('settled');
+      setAnimatedEarned(0);
+      return;
+    }
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setCoinStage('settled');
+      setAnimatedEarned(summary.coinsEarned);
+      return;
+    }
+
+    setCoinStage('initial');
+    setAnimatedEarned(0);
+
+    const raf1 = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setCoinStage('pop');
+      });
+    });
+
+    const settleTimer = window.setTimeout(() => {
+      setCoinStage('settled');
+    }, 520);
+
+    // Smooth count-up synchronized with the CSS transition
+    const duration = 560;
+    const startTime = performance.now();
+    let countRaf = 0;
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedEarned(Math.round(summary.coinsEarned * eased));
+      if (progress < 1) {
+        countRaf = window.requestAnimationFrame(tick);
+      }
+    };
+    countRaf = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(countRaf);
+      window.clearTimeout(settleTimer);
+    };
+  }, [summary.coinsEarned, summary.skill.id, summary.answeredCount]);
 
   // Empty state per STU-05 specification: zero answers submitted before exit
   if (summary.answeredCount === 0) {
@@ -104,7 +159,12 @@ export function SessionSummary({
         <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="submitted" />
-            <StickerSubmitted className="w-28 h-28 -mt-1" />
+            <img
+              src="/images/ui/ui-23.svg"
+              alt="پاسخ ثبت شده"
+              className="w-28 h-28 -mt-1 object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
             <span className="w-10 h-10 rounded-full bg-[#2ba0ff] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
@@ -118,7 +178,12 @@ export function SessionSummary({
         <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="correct" />
-            <StickerCorrect className="w-28 h-28 -mt-1" />
+            <img
+              src="/images/ui/ui-24.svg"
+              alt="پاسخ درست"
+              className="w-28 h-28 -mt-1 object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
             <span className="w-10 h-10 rounded-full bg-[#8ed461] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
@@ -132,7 +197,12 @@ export function SessionSummary({
         <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="attention" />
-            <StickerAttention className="w-28 h-28 -mt-1" />
+            <img
+              src="/images/ui/ui-25.svg"
+              alt="پاسخ نیازمند توجه"
+              className="w-28 h-28 -mt-1 object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
             <span className="w-10 h-10 rounded-full bg-[#ff5c0c] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
@@ -175,12 +245,42 @@ export function SessionSummary({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 md:border-r md:border-[#e0dbce] md:pr-5">
-          <Award className="w-5 h-5 text-[#ff5c0c] shrink-0" />
-          <div>
+        <div className="flex items-center gap-3.5 md:border-r md:border-[#e0dbce] md:pr-5">
+          {/* V3 Coin Emblem with Pure CSS Transition Pop, Halo Ring & Shine Dots */}
+          <div className="relative w-10 h-10 inline-flex items-center justify-center shrink-0">
+            <span
+              data-stage={coinStage}
+              aria-hidden="true"
+              className="narenj-coin-ring absolute inset-0 rounded-full border-2 border-[#f5e211] pointer-events-none"
+            />
+            <span
+              data-stage={coinStage}
+              aria-hidden="true"
+              className="narenj-coin-spark narenj-coin-spark--1 absolute w-1.5 h-1.5 rounded-full bg-[#ff5c0c] pointer-events-none"
+            />
+            <span
+              data-stage={coinStage}
+              aria-hidden="true"
+              className="narenj-coin-spark narenj-coin-spark--2 absolute w-1.5 h-1.5 rounded-full bg-[#f5e211] pointer-events-none"
+            />
+            <span
+              data-stage={coinStage}
+              aria-hidden="true"
+              className="narenj-coin-spark narenj-coin-spark--3 absolute w-1.5 h-1.5 rounded-full bg-[#8ed461] pointer-events-none"
+            />
+            <span
+              data-stage={coinStage}
+              aria-hidden="true"
+              className="narenj-coin-emblem relative w-9 h-9 rounded-full bg-[#f5e211] border-2 border-[#ff5c0c] inline-flex items-center justify-center shadow-[0_2px_0_0_#c74809]"
+            >
+              <span className="w-4 h-4 rounded-full bg-[#ff5c0c]/90 inline-block" />
+            </span>
+          </div>
+
+          <div data-stage={coinStage} className="narenj-coin-value">
             <p className="text-xs text-[#686562]">پاداش تلاش و پیوستگی</p>
             <p className="text-base font-bold text-[#9e3908] tabular-nums">
-              +{toPersianDigits(summary.coinsEarned)} سکه · {medal.label}
+              +{toPersianDigits(animatedEarned)} سکه · {medal.label}
             </p>
           </div>
         </div>

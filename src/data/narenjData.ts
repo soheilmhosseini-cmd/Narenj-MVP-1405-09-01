@@ -250,28 +250,30 @@ export function getMedalForScore(score: number): {
 }
 
 // ============================================================================
-// Official Approved Narenj Character Registry (from repo assets)
+// Narenj Design System V3 Replacement Avatar (1405-08-30-17)
 // ============================================================================
+export const NARENJ_V3_AVATAR_SRC = '/images/ui/ui-17.svg';
+
 export const AVATAR_REGISTRY: AvatarAsset[] = [
-  { id: 'girl-01', category: 'girl', label: 'دانش‌آموز دختر ۱', src: '/images/characters/girl/girl-01.jpg' },
-  { id: 'girl-02', category: 'girl', label: 'دانش‌آموز دختر ۲', src: '/images/characters/girl/girl-02.jpg' },
-  { id: 'girl-03', category: 'girl', label: 'دانش‌آموز دختر ۳', src: '/images/characters/girl/girl-03.jpg' },
-  { id: 'girl-04', category: 'girl', label: 'دانش‌آموز دختر ۴', src: '/images/characters/girl/girl-04.jpg' },
-  { id: 'boy-01', category: 'boy', label: 'دانش‌آموز پسر ۱', src: '/images/characters/boy/boy-01.jpg' },
-  { id: 'boy-02', category: 'boy', label: 'دانش‌آموز پسر ۲', src: '/images/characters/boy/boy-02.jpg' },
-  { id: 'boy-03', category: 'boy', label: 'دانش‌آموز پسر ۳', src: '/images/characters/boy/boy-03.jpg' },
-  { id: 'boy-04', category: 'boy', label: 'دانش‌آموز پسر ۴', src: '/images/characters/boy/boy-04.jpg' },
-  { id: 'teacher-01', category: 'teacher', label: 'معلم ۱', src: '/images/characters/teacher/teacher-01.jpg' },
-  { id: 'teacher-02', category: 'teacher', label: 'معلم ۲', src: '/images/characters/teacher/teacher-02.jpg' },
-  { id: 'default-01', category: 'default', label: 'پیش‌فرض', src: '/images/characters/default/default-01.jpg' },
+  { id: 'girl-01', category: 'girl', label: 'آواتار ۱', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'girl-02', category: 'girl', label: 'آواتار ۲', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'girl-03', category: 'girl', label: 'آواتار ۳', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'girl-04', category: 'girl', label: 'آواتار ۴', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'boy-01', category: 'boy', label: 'آواتار ۵', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'boy-02', category: 'boy', label: 'آواتار ۶', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'boy-03', category: 'boy', label: 'آواتار ۷', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'boy-04', category: 'boy', label: 'آواتار ۸', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'teacher-01', category: 'teacher', label: 'آواتار معلم ۱', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'teacher-02', category: 'teacher', label: 'آواتار معلم ۲', src: NARENJ_V3_AVATAR_SRC },
+  { id: 'default-01', category: 'default', label: 'پیش‌فرض', src: NARENJ_V3_AVATAR_SRC },
 ];
 
-export function resolveAvatarSrc(avatarId: string | null | undefined, fallbackCategory: 'student' | 'teacher' = 'student'): string {
+export function resolveAvatarSrc(
+  avatarId: string | null | undefined,
+  _fallbackCategory: 'student' | 'teacher' = 'student'
+): string {
   const found = AVATAR_REGISTRY.find((a) => a.id === avatarId);
-  if (found) return found.src;
-  return fallbackCategory === 'teacher'
-    ? '/images/characters/teacher/teacher-01.jpg'
-    : '/images/characters/default/default-01.jpg';
+  return found ? found.src : NARENJ_V3_AVATAR_SRC;
 }
 
 // ============================================================================

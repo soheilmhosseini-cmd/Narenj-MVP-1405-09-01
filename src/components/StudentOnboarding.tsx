@@ -120,11 +120,11 @@ export function StudentOnboarding({ student, onComplete }: StudentOnboardingProp
                         <Check className="w-4 h-4 stroke-[3]" />
                       </span>
                     )}
-                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-white border-2 border-white shadow-sm">
+                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden">
                       <img
                         src={avatar.src}
                         alt={avatar.label}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-contain"
                         referrerPolicy="no-referrer"
                       />
                     </div>
@@ -142,7 +142,7 @@ export function StudentOnboarding({ student, onComplete }: StudentOnboardingProp
                 <img
                   src={selectedAvatar.src}
                   alt={selectedAvatar.label}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-[#ff5c0c]"
+                  className="w-12 h-12 rounded-full object-contain"
                   referrerPolicy="no-referrer"
                 />
                 <div className="text-sm">

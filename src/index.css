@@ -143,6 +143,285 @@ body {
   background-size: 28px 28px;
 }
 
+/* ============================================================================
+   Coin-Earning Celebration — Pure CSS Transitions (Compositor-Only)
+   ============================================================================ */
+.narenj-coin-counter {
+  transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 240ms ease;
+  will-change: transform;
+}
+
+.narenj-coin-counter--burst {
+  transform: translateY(-2px) scale(1.07);
+}
+
+.narenj-coin-delta {
+  transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.narenj-coin-delta[data-stage="enter"] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.86);
+}
+
+.narenj-coin-delta[data-stage="visible"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.narenj-coin-delta[data-stage="exit"] {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.94);
+}
+
+.narenj-coin-emblem {
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.narenj-coin-emblem[data-stage="initial"] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.68) rotate(-18deg);
+}
+
+.narenj-coin-emblem[data-stage="pop"] {
+  opacity: 1;
+  transform: translateY(-4px) scale(1.14) rotate(8deg);
+}
+
+.narenj-coin-emblem[data-stage="settled"] {
+  opacity: 1;
+  transform: translateY(0) scale(1) rotate(0deg);
+}
+
+.narenj-coin-ring {
+  transition: transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 680ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.narenj-coin-ring[data-stage="initial"] {
+  opacity: 0;
+  transform: scale(0.65);
+}
+
+.narenj-coin-ring[data-stage="pop"] {
+  opacity: 0.85;
+  transform: scale(1.15);
+}
+
+.narenj-coin-ring[data-stage="settled"] {
+  opacity: 0;
+  transform: scale(1.8);
+}
+
+.narenj-coin-spark {
+  transition: transform 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.narenj-coin-spark[data-stage="initial"] {
+  opacity: 0;
+  transform: translate(0, 0) scale(0.3);
+}
+
+.narenj-coin-spark--1[data-stage="pop"] {
+  opacity: 1;
+  transform: translate(-14px, -16px) scale(1);
+}
+
+.narenj-coin-spark--2[data-stage="pop"] {
+  opacity: 1;
+  transform: translate(15px, -14px) scale(1);
+}
+
+.narenj-coin-spark--3[data-stage="pop"] {
+  opacity: 1;
+  transform: translate(0, -20px) scale(1.1);
+}
+
+.narenj-coin-spark[data-stage="settled"] {
+  opacity: 0;
+  transform: translateY(-24px) scale(0.5);
+}
+
+.narenj-coin-value {
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.narenj-coin-value[data-stage="initial"] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.narenj-coin-value[data-stage="pop"] {
+  opacity: 1;
+  transform: translateY(-1px) scale(1.03);
+}
+
+.narenj-coin-value[data-stage="settled"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ============================================================================
+   Kherad-Inspired Editorial Edge-Button Hover Motion & 3-Line to X Morph
+   ============================================================================ */
+.narenj-menu-trigger {
+  position: absolute;
+  overflow: hidden;
+  background-color: var(--narenj-orange-500);
+  color: var(--narenj-white);
+}
+
+.narenj-hamburger {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 18px;
+  display: block;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.narenj-hamburger-bar {
+  position: absolute;
+  right: 0;
+  width: 26px;
+  height: 2.25px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  transform-origin: center center;
+  transition:
+    transform 380ms cubic-bezier(0.76, 0, 0.24, 1),
+    width 320ms cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 220ms cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform, width, opacity;
+}
+
+.narenj-hamburger-bar--1 {
+  top: 0;
+}
+
+.narenj-hamburger-bar--2 {
+  top: 8px;
+}
+
+.narenj-hamburger-bar--3 {
+  top: 16px;
+}
+
+/* Hover wave choreography when menu is closed */
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--1 {
+  width: 22px;
+  transform: translate3d(-2px, -1.5px, 0);
+  transition-delay: 0ms;
+}
+
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--2 {
+  width: 19px;
+  transform: translate3d(-4px, 0, 0);
+  transition-delay: 45ms;
+}
+
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--3 {
+  width: 24px;
+  transform: translate3d(-1px, 1.5px, 0);
+  transition-delay: 90ms;
+}
+
+/* Open state: smooth morph from 3 lines into X */
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--1 {
+  width: 26px;
+  transform: translate3d(0, 8px, 0) rotate(45deg);
+  transition-delay: 0ms;
+}
+
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--2 {
+  width: 26px;
+  transform: translate3d(8px, 0, 0) scaleX(0);
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--3 {
+  width: 26px;
+  transform: translate3d(0, -8px, 0) rotate(-45deg);
+  transition-delay: 0ms;
+}
+
+/* Hover while open: crisp 90-degree kinetic spin on the X */
+.narenj-menu-trigger[data-open="true"]:hover .narenj-hamburger {
+  transform: rotate(90deg) scale(1.06);
+}
+
+/* Left-edge utility rail buttons — curtain color wipe + icon scale (no button protrusion) */
+.narenj-rail-btn {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  background-color: var(--narenj-cream-paper);
+  color: var(--narenj-orange-500);
+  transition: color 260ms cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.narenj-rail-btn[data-active="true"] {
+  background-color: var(--narenj-orange-500);
+  color: var(--narenj-cream-paper);
+}
+
+.narenj-rail-btn__curtain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.narenj-rail-btn__curtain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--narenj-orange-500);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 360ms cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
+}
+
+.narenj-rail-btn[data-active="true"] .narenj-rail-btn__curtain::before {
+  background-color: var(--narenj-orange-700);
+}
+
+.narenj-rail-btn:hover,
+.narenj-rail-btn:focus-visible {
+  color: var(--narenj-cream-paper);
+}
+
+.narenj-rail-btn:hover .narenj-rail-btn__curtain::before,
+.narenj-rail-btn:focus-visible .narenj-rail-btn__curtain::before {
+  transform: scaleX(1);
+}
+
+.narenj-rail-btn__icon {
+  position: relative;
+  z-index: 1;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.narenj-rail-btn:hover .narenj-rail-btn__icon,
+.narenj-rail-btn:focus-visible .narenj-rail-btn__icon {
+  transform: scale(1.1) translateY(-1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

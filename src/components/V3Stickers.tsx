@@ -242,10 +242,28 @@ export function V3PillButton({
   children,
   ...props
 }: V3PillButtonProps) {
-  const sizeStyles = {
-    sm: 'h-10 px-4 text-sm gap-2.5',
-    md: 'h-12 px-5 text-base gap-3',
-    lg: 'h-14 px-6 text-base gap-3.5',
+  const sizeStyles = showArrow
+    ? {
+        sm: 'h-10 pr-4 pl-1.5 text-sm gap-2.5',
+        md: 'h-12 pr-5 pl-2 text-base gap-3',
+        lg: 'h-14 pr-6 pl-2.5 text-base gap-3.5',
+      }[size]
+    : {
+        sm: 'h-10 px-4 text-sm gap-2.5',
+        md: 'h-12 px-5 text-base gap-3',
+        lg: 'h-14 px-6 text-base gap-3.5',
+      }[size];
+
+  const arrowCircleSize = {
+    sm: 'w-7 h-7',
+    md: 'w-8 h-8',
+    lg: 'w-9 h-9',
+  }[size];
+
+  const arrowIconSize = {
+    sm: 'w-3.5 h-3.5',
+    md: 'w-4 h-4',
+    lg: 'w-4 h-4',
   }[size];
 
   const variantStyles = {
@@ -254,7 +272,7 @@ export function V3PillButton({
       : 'bg-[#ff5c0c] hover:bg-[#ec5c17] active:bg-[#c74809] text-white shadow-[0_3px_0_0_#c74809]',
     secondary: disabled
       ? 'bg-[#d5d5d4] text-[#686562] cursor-not-allowed'
-      : 'bg-[#f5f1e4] hover:bg-[#ebe4d0] active:bg-[#e0dbce] text-[#1d1d1b] border border-[#e0dbce]',
+      : 'bg-[#f5f1e4] hover:bg-[#ebe4d0] active:bg-[#e0dbce] text-[#1d1d1b] ring-1 ring-inset ring-[#e0dbce] shadow-[0_3px_0_0_#e0dbce]',
     ghost: disabled
       ? 'text-[#686562] cursor-not-allowed'
       : 'bg-transparent hover:bg-[#f5f1e4] text-[#3c3c3c]',
@@ -279,13 +297,13 @@ export function V3PillButton({
       <span>{children}</span>
       {showArrow && (
         <span
-          className={`w-7 h-7 rounded-full inline-flex items-center justify-center shrink-0 ${arrowCircleBg}`}
+          className={`${arrowCircleSize} rounded-full inline-flex items-center justify-center shrink-0 ${arrowCircleBg}`}
           aria-hidden="true"
         >
           {arrowDirection === 'forward' ? (
-            <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+            <ChevronLeft className={`${arrowIconSize} stroke-[2.5]`} />
           ) : (
-            <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+            <ChevronRight className={`${arrowIconSize} stroke-[2.5]`} />
           )}
         </span>
       )}
