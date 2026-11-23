@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* Narenj Official Primary Typeface — Abar Low (Real WOFF2 weights: 400, 600, 700) */
+@font-face {
+  font-family: "Abar Low";
+  src: url("/fonts/AbarLow-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Abar Low";
+  src: url("/fonts/AbarLow-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Abar Low";
+  src: url("/fonts/AbarLow-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Brand Orange Scale — Narenj Design System V3 */
+  --narenj-orange-50: #fff2eb;
+  --narenj-orange-100: #ffe5d8;
+  --narenj-orange-200: #ffcbb1;
+  --narenj-orange-300: #ff9d6d;
+  --narenj-orange-500: #ff5c0c;
+  --narenj-orange-600: #ec5c17;
+  --narenj-orange-700: #c74809;
+  --narenj-orange-800: #9e3908;
+
+  /* Accent Palette — V3 */
+  --narenj-sky-pop: #2ba0ff;
+  --narenj-highlighter-yellow: #f5e211;
+  --narenj-fresh-grass: #8ed461;
+  --narenj-coral-pop: #ff705d;
+  --narenj-sticky-green: #e1eb80;
+
+  /* Neutral Palette — V3 */
+  --narenj-black-ink: #1d1d1b;
+  --narenj-warm-gray-text: #3c3c3c;
+  --narenj-warm-gray-lines: #686562;
+  --narenj-hairline-mist: #d5d5d4;
+  --narenj-drafting-blue: #c5d3e8;
+  --narenj-white: #ffffff;
+  --narenj-sandstone: #e0dbce;
+  --narenj-cream-paper: #f5f1e4;
+  --narenj-drafting-yellow: #f9f4ae;
+
+  /* Radii — V3 */
+  --radius-chip: 10px;
+  --radius-control: 16px;
+  --radius-learning-card: 24px;
+  --radius-button: 50px;
+  --radius-general-card: 50px;
+  --radius-illustration: 63.75px;
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --content-max: 1200px;
+  --font-scale: 1;
+}
+
+html {
+  font-family: "Abar Low", Tahoma, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: calc(16px * var(--font-scale));
+  color: var(--narenj-black-ink);
+  background-color: var(--narenj-white);
+  direction: rtl;
+  text-align: start;
+  scroll-behavior: smooth;
+}
+
+html.narenj-large-text {
+  --font-scale: 1.12;
+}
+
+/* High-contrast accessibility mode (preserves contrast without breaking brand hierarchy) */
+html.narenj-high-contrast {
+  --narenj-cream-paper: #efe8d2;
+  --narenj-sandstone: #b8b09c;
+  --narenj-warm-gray-lines: #3c3c3c;
+  --narenj-hairline-mist: #9c9a96;
+}
+
+body {
+  font-family: "Abar Low", Tahoma, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.8;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* V3 Tactile Paper Surface & Soft Lip Shadow (Matches V3 PDF Pages 10-11) */
+.narenj-cream-card {
+  background-color: var(--narenj-cream-paper);
+  border-radius: var(--radius-learning-card);
+  border: 1px solid rgba(224, 219, 206, 0.75);
+  box-shadow: 0 3px 0 0 #e5dfd0;
+}
+
+.narenj-tray {
+  background-color: var(--narenj-white);
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(29, 29, 27, 0.05);
+}
+
+.narenj-pill-btn {
+  border-radius: var(--radius-button);
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.narenj-pill-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Accessible visible focus rings */
+:focus-visible {
+  outline: 2px solid var(--narenj-sky-pop);
+  outline-offset: 2px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Subtle drafting grid background for math workspaces */
+.narenj-drafting-grid {
+  background-image: linear-gradient(to right, rgba(197, 211, 232, 0.32) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(197, 211, 232, 0.32) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

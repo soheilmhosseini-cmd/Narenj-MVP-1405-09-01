@@ -1,0 +1,6 @@
+{
+  "name": "نارنج — سامانه یکپارچه یادگیری و تمرین دانش‌آموزان",
+  "description": "پلتفرم دیجیتال یادگیری، تمرین تطبیقی و رشد فردی دانش‌آموزان دوره ابتدایی و مدیریت آموزشی معلمان بر اساس دیزاین سیستم نارنج V3",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

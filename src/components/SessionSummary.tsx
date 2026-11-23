@@ -1,0 +1,225 @@
+import React from 'react';
+import { Award, Clock, RotateCcw } from 'lucide-react';
+import {
+  SkillRecord,
+  toPersianDigits,
+  formatElapsedTime,
+  getMedalForScore,
+  getMasteryLevel,
+  MASTERY_META,
+} from '../data/narenjData';
+import {
+  StickerSubmitted,
+  StickerCorrect,
+  StickerAttention,
+  V3CornerBadge,
+  V3PillButton,
+  MedalIcon,
+} from './V3Stickers';
+
+export interface SessionSummaryData {
+  skill: SkillRecord;
+  answeredCount: number;
+  correctCount: number;
+  needsAttentionCount: number;
+  finalSmartScore: number;
+  elapsedSeconds: number;
+  coinsEarned: number;
+  fromAssignment: boolean;
+  reachedMastery: boolean;
+}
+
+interface SessionSummaryProps {
+  summary: SessionSummaryData;
+  onReturnToTasks: () => void;
+  onPracticeAgain: () => void;
+  onOpenProgress: () => void;
+}
+
+/**
+ * STU-05 Session Summary — Pixel-Faithful to Narenj Design System V3 Page 11
+ * Includes empty-exit handling (0 answers submitted), 3 Cream Paper Result Cards,
+ * SmartScore / Medal milestone (secondary to learning result per P-12), and V3 Orange Pill CTA.
+ */
+export function SessionSummary({
+  summary,
+  onReturnToTasks,
+  onPracticeAgain,
+  onOpenProgress,
+}: SessionSummaryProps) {
+  const medal = getMedalForScore(summary.finalSmartScore);
+  const mastery = getMasteryLevel(summary.finalSmartScore, summary.answeredCount);
+  const masteryMeta = MASTERY_META[mastery];
+
+  // Empty state per STU-05 specification: zero answers submitted before exit
+  if (summary.answeredCount === 0) {
+    return (
+      <div className="max-w-[760px] mx-auto py-12 px-4 text-center space-y-6">
+        <div className="narenj-cream-card p-8 md:p-10 space-y-5">
+          <div className="flex justify-center">
+            <StickerSubmitted className="w-24 h-24" />
+          </div>
+          <h1 className="text-[28px] md:text-[34px] font-bold text-[#1d1d1b]">
+            پیش از ثبت پاسخ از جلسه خارج شدی
+          </h1>
+          <p className="text-base text-[#3c3c3c] max-w-md mx-auto">
+            هنوز پاسخی برای تمرین «{summary.skill.title}» ثبت نشده است. هر زمان آماده بودی می‌توانی دوباره شروع کنی.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <V3PillButton type="button" onClick={onPracticeAgain}>
+              ادامه همین تمرین
+            </V3PillButton>
+            <V3PillButton
+              type="button"
+              variant="secondary"
+              showArrow={false}
+              onClick={onReturnToTasks}
+            >
+              {summary.fromAssignment ? 'بازگشت به تکلیف‌ها' : 'بازگشت به خانه من'}
+            </V3PillButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[960px] mx-auto py-6 md:py-10 px-4">
+      {/* V3 Page 11 Title Block */}
+      <div className="text-center space-y-2.5 mb-10">
+        <h1 className="text-[30px] md:text-[38px] font-bold text-[#ff5c0c] leading-[1.35]">
+          {summary.reachedMastery
+            ? 'آفرین! به تسلط کامل رسیدی:)'
+            : 'یک قدم تازه برداشتی...:)'}
+        </h1>
+        <p className="text-base md:text-lg text-[#1d1d1b]">
+          <span className="font-bold">تمرین: </span>
+          <span className="text-[#3c3c3c]">{summary.skill.title}</span>
+        </p>
+      </div>
+
+      {/* Exact 3 V3 Cream Paper Result Cards (Matches Design System V3 Page 10 & 11) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-9">
+        {/* Card 1: پاسخ ثبت شده (Submitted) */}
+        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+          <div className="flex items-start justify-between gap-2 px-1 pt-1">
+            <V3CornerBadge variant="submitted" />
+            <StickerSubmitted className="w-28 h-28 -mt-1" />
+          </div>
+          <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
+            <span className="w-10 h-10 rounded-full bg-[#2ba0ff] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
+              {toPersianDigits(summary.answeredCount)}
+            </span>
+            <span className="text-base font-bold text-[#1d1d1b]">پاسخ ثبت شده</span>
+          </div>
+        </article>
+
+        {/* Card 2: پاسخ درست (Correct) */}
+        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+          <div className="flex items-start justify-between gap-2 px-1 pt-1">
+            <V3CornerBadge variant="correct" />
+            <StickerCorrect className="w-28 h-28 -mt-1" />
+          </div>
+          <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
+            <span className="w-10 h-10 rounded-full bg-[#8ed461] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
+              {toPersianDigits(summary.correctCount)}
+            </span>
+            <span className="text-base font-bold text-[#1d1d1b]">پاسخ درست</span>
+          </div>
+        </article>
+
+        {/* Card 3: پاسخ نیازمند توجه (Needs Attention — pedagogical, non-punitive!) */}
+        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+          <div className="flex items-start justify-between gap-2 px-1 pt-1">
+            <V3CornerBadge variant="attention" />
+            <StickerAttention className="w-28 h-28 -mt-1" />
+          </div>
+          <div className="narenj-tray px-4 py-3.5 mt-4 flex items-center justify-between gap-3">
+            <span className="w-10 h-10 rounded-full bg-[#ff5c0c] text-white font-bold text-lg inline-flex items-center justify-center tabular-nums shrink-0">
+              {toPersianDigits(summary.needsAttentionCount)}
+            </span>
+            <span className="text-base font-bold text-[#1d1d1b]">پاسخ نیازمند توجه</span>
+          </div>
+        </article>
+      </div>
+
+      {/* Learning Progress & Secondary Reward Strip (Per P-12: Result first, reward second) */}
+      <div className="rounded-[24px] bg-white border border-[#e0dbce] p-5 md:p-6 mb-9 grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+        <div className="flex items-center gap-3.5">
+          <MedalIcon tier={medal.tier} size={36} />
+          <div>
+            <p className="text-xs text-[#686562]">امتیاز هوشمند تسلط</p>
+            <p className="text-lg font-bold text-[#1d1d1b] tabular-nums">
+              {toPersianDigits(summary.finalSmartScore)} از ۱۰۰
+              <span
+                className="mr-2 text-xs font-semibold px-2.5 py-0.5 rounded-[10px]"
+                style={{
+                  backgroundColor: masteryMeta.bg,
+                  color: masteryMeta.color,
+                  border: `1px solid ${masteryMeta.border}`,
+                }}
+              >
+                {masteryMeta.label}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 md:border-r md:border-[#e0dbce] md:pr-5">
+          <Clock className="w-5 h-5 text-[#686562] shrink-0" />
+          <div>
+            <p className="text-xs text-[#686562]">مدت تمرین این جلسه</p>
+            <p className="text-base font-bold text-[#1d1d1b] tabular-nums">
+              {formatElapsedTime(summary.elapsedSeconds)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 md:border-r md:border-[#e0dbce] md:pr-5">
+          <Award className="w-5 h-5 text-[#ff5c0c] shrink-0" />
+          <div>
+            <p className="text-xs text-[#686562]">پاداش تلاش و پیوستگی</p>
+            <p className="text-base font-bold text-[#9e3908] tabular-nums">
+              +{toPersianDigits(summary.coinsEarned)} سکه · {medal.label}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* V3 Page 11 Signature Centered Primary CTA + Quiet Secondary Links */}
+      <div className="flex flex-col items-center gap-4">
+        <V3PillButton
+          type="button"
+          size="lg"
+          onClick={onReturnToTasks}
+          className="min-w-[240px]"
+        >
+          {summary.fromAssignment ? 'بازگشت به تکلیف‌ها' : 'بازگشت به خانه یادگیری'}
+        </V3PillButton>
+
+        <div className="flex flex-wrap items-center justify-center gap-5 text-sm font-semibold text-[#686562]">
+          {!summary.reachedMastery && (
+            <button
+              type="button"
+              onClick={onPracticeAgain}
+              className="inline-flex items-center gap-1.5 hover:text-[#ff5c0c] transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>ادامه تمرین برای رسیدن به امتیاز ۱۰۰</span>
+            </button>
+          )}
+          <span aria-hidden="true" className="text-[#d5d5d4]">
+            ·
+          </span>
+          <button
+            type="button"
+            onClick={onOpenProgress}
+            className="hover:text-[#1d1d1b] transition-colors cursor-pointer"
+          >
+            مشاهده مسیر رشد من
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
