@@ -401,11 +401,23 @@ export function StudentWorkspace({
                             style={{ width: `${fractionPercent}%` }}
                           />
                           <span
-                            className="absolute -top-0.5 -bottom-0.5 w-[2px] bg-[#1d1d1b]/65 rounded-full"
+                            className={`absolute top-1/2 -translate-y-1/2 translate-x-1/2 w-[21px] h-[21px] rounded-full border-2 border-white inline-flex items-center justify-center transition-transform duration-150 ${
+                              fractionPercent >= 80 ? 'bg-[#8ed461]' : 'bg-[#ff5c0c]'
+                            }`}
                             style={{ insetInlineStart: '80%' }}
-                            title="نمرهٔ لازم ۸۰"
+                            title="هدف تمرین: نمرهٔ ۸۰"
                             aria-hidden="true"
-                          />
+                          >
+                            <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none">
+                              <path
+                                d="M8 1.6l1.75 3.65 4 .55-2.92 2.8.72 3.98L8 10.65l-3.55 1.93.72-3.98-2.92-2.8 4-.55L8 1.6z"
+                                fill="#f5e211"
+                                stroke="#f5e211"
+                                strokeWidth="0.9"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
                         </div>
                         <p className="text-xs font-semibold text-[#2c3a4f] leading-relaxed [font-variant-numeric:proportional-nums]">
                           {toPersianDigits(fractionPercent)} درصد از تمرین رو رفتی، مسیرت رو ادامه بده...
@@ -529,10 +541,25 @@ export function StudentWorkspace({
                               />
                             )}
                             <span
-                              className="absolute -top-1 -bottom-1 w-[2px] bg-[#1d1d1b] rounded-full"
+                              className={`absolute top-1/2 -translate-y-1/2 translate-x-1/2 w-[19px] h-[19px] rounded-full border-2 border-white inline-flex items-center justify-center transition-transform duration-150 group-hover:scale-115 ${
+                                item.status === 'completed' || item.score >= item.target
+                                  ? 'bg-[#8ed461]'
+                                  : 'bg-[#ff5c0c]'
+                              }`}
                               style={{ insetInlineStart: `${item.target}%` }}
+                              title={`هدف تکلیف: نمرهٔ ${toPersianDigits(item.target)}`}
                               aria-hidden="true"
-                            />
+                            >
+                              <svg viewBox="0 0 16 16" className="w-2.5 h-2.5" fill="none">
+                                <path
+                                  d="M8 1.6l1.75 3.65 4 .55-2.92 2.8.72 3.98L8 10.65l-3.55 1.93.72-3.98-2.92-2.8 4-.55L8 1.6z"
+                                  fill="#f5e211"
+                                  stroke="#f5e211"
+                                  strokeWidth="0.9"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </span>
                           </div>
                         </div>
                       </button>
@@ -630,6 +657,7 @@ export function StudentWorkspace({
                     score: 100,
                     coins: 30,
                     when: 'دیروز',
+                    icon: '/images/ui/res-22-24.svg',
                   },
                   {
                     id: 'res-time',
@@ -637,6 +665,7 @@ export function StudentWorkspace({
                     score: 85,
                     coins: 20,
                     when: '۳ روز پیش',
+                    icon: '/images/ui/res-22-23.svg',
                   },
                   {
                     id: 'res-mult-2d',
@@ -644,6 +673,7 @@ export function StudentWorkspace({
                     score: 65,
                     coins: 10,
                     when: '۵ روز پیش',
+                    icon: '/images/ui/res-22-22.svg',
                   },
                 ].map((res, idx) => (
                   <div
@@ -655,9 +685,16 @@ export function StudentWorkspace({
                     }`}
                   >
                     <span
-                      className="w-[60px] h-[60px] rounded-[16px] bg-[#ecebe8] border border-dashed border-[#c8c6c2] shrink-0"
+                      className="w-[64px] h-[64px] inline-flex items-center justify-center shrink-0"
                       aria-hidden="true"
-                    />
+                    >
+                      <img
+                        src={res.icon}
+                        alt=""
+                        className="w-full h-full object-contain"
+                        referrerPolicy="no-referrer"
+                      />
+                    </span>
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-base font-bold text-[#1d1d1b] truncate">{res.title}</h3>
