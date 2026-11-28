@@ -319,46 +319,53 @@ body {
 }
 
 /* Hover wave choreography when menu is closed */
-.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--1 {
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--1,
+.narenj-mobile-trigger[data-open="false"]:hover .narenj-hamburger-bar--1 {
   width: 22px;
   transform: translate3d(-2px, -1.5px, 0);
   transition-delay: 0ms;
 }
 
-.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--2 {
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--2,
+.narenj-mobile-trigger[data-open="false"]:hover .narenj-hamburger-bar--2 {
   width: 19px;
   transform: translate3d(-4px, 0, 0);
   transition-delay: 45ms;
 }
 
-.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--3 {
+.narenj-menu-trigger[data-open="false"]:hover .narenj-hamburger-bar--3,
+.narenj-mobile-trigger[data-open="false"]:hover .narenj-hamburger-bar--3 {
   width: 24px;
   transform: translate3d(-1px, 1.5px, 0);
   transition-delay: 90ms;
 }
 
 /* Open state: smooth morph from 3 lines into X */
-.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--1 {
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--1,
+.narenj-mobile-trigger[data-open="true"] .narenj-hamburger-bar--1 {
   width: 26px;
   transform: translate3d(0, 8px, 0) rotate(45deg);
   transition-delay: 0ms;
 }
 
-.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--2 {
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--2,
+.narenj-mobile-trigger[data-open="true"] .narenj-hamburger-bar--2 {
   width: 26px;
   transform: translate3d(8px, 0, 0) scaleX(0);
   opacity: 0;
   transition-delay: 0ms;
 }
 
-.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--3 {
+.narenj-menu-trigger[data-open="true"] .narenj-hamburger-bar--3,
+.narenj-mobile-trigger[data-open="true"] .narenj-hamburger-bar--3 {
   width: 26px;
   transform: translate3d(0, -8px, 0) rotate(-45deg);
   transition-delay: 0ms;
 }
 
 /* Hover while open: crisp 90-degree kinetic spin on the X */
-.narenj-menu-trigger[data-open="true"]:hover .narenj-hamburger {
+.narenj-menu-trigger[data-open="true"]:hover .narenj-hamburger,
+.narenj-mobile-trigger[data-open="true"]:hover .narenj-hamburger {
   transform: rotate(90deg) scale(1.06);
 }
 
@@ -420,6 +427,99 @@ body {
 .narenj-rail-btn:hover .narenj-rail-btn__icon,
 .narenj-rail-btn:focus-visible .narenj-rail-btn__icon {
   transform: scale(1.1) translateY(-1px);
+}
+
+/* ============================================================================
+   Goal & Module Completion Celebrations — Compositor-Only (transform + opacity)
+   ============================================================================ */
+@keyframes narenj-particle-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+    transform: translate3d(calc(var(--tx) * 0.42), calc(var(--ty) * 0.48), 0) scale(1.08)
+      rotate(calc(var(--rot) * 0.45));
+  }
+  72% {
+    opacity: 0.92;
+    transform: translate3d(var(--tx), var(--ty), 0) scale(0.95) rotate(var(--rot));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--tx), calc(var(--ty) + 12px), 0) scale(0.55)
+      rotate(calc(var(--rot) * 1.15));
+  }
+}
+
+@keyframes narenj-halo-expand {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  28% {
+    opacity: 0.72;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes narenj-goal-scale-up {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.025) translateY(-1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes narenj-card-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.narenj-celebration-particle {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: narenj-particle-burst;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.narenj-halo-ring {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: narenj-halo-expand 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.narenj-goal-scale-up {
+  will-change: transform, opacity;
+  animation: narenj-goal-scale-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.narenj-card-pop {
+  will-change: transform, opacity;
+  animation: narenj-card-pop 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -17,8 +17,9 @@ import {
   normalizeDigitsToLatin,
   toPersianDigits,
 } from '../data/narenjData';
-import { V3PillButton } from './V3Stickers';
+import { MedalIcon, V3PillButton } from './V3Stickers';
 import { SessionSummaryData } from './SessionSummary';
+import { NarenjCelebrationBurst } from './NarenjCelebrationBurst';
 
 interface PracticeSessionProps {
   skill: SkillRecord;
@@ -118,6 +119,12 @@ export function PracticeSession({
   const [submittedResult, setSubmittedResult] = useState<{
     isCorrect: boolean;
     delta: number;
+  } | null>(null);
+  const [goalMilestone, setGoalMilestone] = useState<{
+    tier: 'bronze' | 'silver' | 'gold';
+    label: string;
+    score: number;
+    burstKey: number;
   } | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
 
@@ -238,6 +245,36 @@ export function PracticeSession({
     setSession(nextSession);
     onUpdateActiveSession(nextSession);
     setSubmittedResult({ isCorrect: check.isCorrect, delta: check.isCorrect ? gain : -drop });
+
+    // Detect SmartScore goal milestones (80 Bronze, 90 Silver, 100 Gold mastery)
+    if (check.isCorrect) {
+      if (session.smartScore < 100 && nextSmartScore >= 100) {
+        setGoalMilestone({
+          tier: 'gold',
+          label: 'تسلط کامل! به هدف امتیاز ۱۰۰ و مدال طلا رسیدی',
+          score: 100,
+          burstKey: Date.now(),
+        });
+      } else if (session.smartScore < 90 && nextSmartScore >= 90) {
+        setGoalMilestone({
+          tier: 'silver',
+          label: 'عالی بود! به هدف امتیاز ۹۰ و مدال نقره رسیدی',
+          score: 90,
+          burstKey: Date.now(),
+        });
+      } else if (session.smartScore < 80 && nextSmartScore >= 80) {
+        setGoalMilestone({
+          tier: 'bronze',
+          label: 'آفرین! به هدف امتیاز ۸۰ و مدال برنز رسیدی',
+          score: 80,
+          burstKey: Date.now(),
+        });
+      } else {
+        setGoalMilestone(null);
+      }
+    } else {
+      setGoalMilestone(null);
+    }
   };
 
   const buildSummary = (state: ActivePracticeState): SessionSummaryData => {
@@ -276,6 +313,7 @@ export function PracticeSession({
     setNumericText('');
     setShowHint(false);
     setSubmittedResult(null);
+    setGoalMilestone(null);
     setValidationError(null);
   };
 
@@ -373,8 +411,8 @@ export function PracticeSession({
         </div>
       </div>
 
-      {/* Subtle SmartScore Progress Bar with 80 / 90 / 100 Medal Markers */}
-      <div className="mb-6">
+      {/* Subtle SmartScore Progress Bar with 80 / 90 / 100 Medal Markers & Goal Burst */}
+      <div className="mb-6 relative">
         <div className="relative h-2.5 w-full rounded-full bg-[#f5f1e4] overflow-hidden border border-[#e0dbce]/80">
           <div
             className="h-full rounded-full bg-[#ff5c0c] transition-all duration-300"
@@ -391,6 +429,19 @@ export function PracticeSession({
             title="مدال نقره (۹۰)"
           />
         </div>
+
+        {goalMilestone && (
+          <div
+            className="pointer-events-none absolute top-1/2 -translate-y-1/2 w-10 h-10 -ms-5"
+            style={{ insetInlineStart: `${Math.min(96, goalMilestone.score)}%` }}
+          >
+            <NarenjCelebrationBurst
+              triggerKey={goalMilestone.burstKey}
+              variant="goal"
+              emphasized={goalMilestone.tier === 'gold'}
+            />
+          </div>
+        )}
       </div>
 
       {/* Primary Question Stage (Zero-Jump Container) */}
@@ -628,12 +679,31 @@ export function PracticeSession({
           <div
             role="status"
             aria-live="polite"
-            className={`rounded-[20px] p-5 border-2 space-y-2.5 ${
+            className={`relative rounded-[20px] p-5 border-2 space-y-3 ${
               submittedResult.isCorrect
-                ? 'bg-[#eef9e6] border-[#8ed461]'
+                ? 'bg-[#eef9e6] border-[#8ed461] narenj-goal-scale-up'
                 : 'bg-[#fff2eb] border-[#ff705d]'
             }`}
           >
+            {goalMilestone && (
+              <div className="relative narenj-tray border border-[#e0dbce] px-4 py-3 flex items-center gap-3 narenj-goal-scale-up">
+                <div className="relative w-9 h-9 inline-flex items-center justify-center shrink-0">
+                  <NarenjCelebrationBurst
+                    triggerKey={`badge-${goalMilestone.burstKey}`}
+                    variant="goal"
+                    emphasized={goalMilestone.tier === 'gold'}
+                  />
+                  <MedalIcon tier={goalMilestone.tier} size={32} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#ff5c0c]">{goalMilestone.label}</p>
+                  <p className="text-xs text-[#686562]">
+                    این دستاورد در مسیر رشد و مدال‌های تو ثبت شد.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 {submittedResult.isCorrect ? (

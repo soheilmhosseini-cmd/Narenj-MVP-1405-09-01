@@ -14,6 +14,7 @@ import {
   V3PillButton,
   MedalIcon,
 } from './V3Stickers';
+import { NarenjCelebrationBurst } from './NarenjCelebrationBurst';
 
 export interface SessionSummaryData {
   skill: SkillRecord;
@@ -140,23 +141,32 @@ export function SessionSummary({
 
   return (
     <div className="max-w-[960px] mx-auto py-6 md:py-10 px-4">
-      {/* V3 Page 11 Title Block */}
-      <div className="text-center space-y-2.5 mb-10">
-        <h1 className="text-[30px] md:text-[38px] font-bold text-[#ff5c0c] leading-[1.35]">
+      {/* V3 Page 11 Title Block with Subtle Narenj Module-Completion Particle Burst */}
+      <div className="relative text-center space-y-2.5 mb-10">
+        <NarenjCelebrationBurst
+          triggerKey={`${summary.skill.id}-${summary.answeredCount}-${summary.finalSmartScore}`}
+          variant="module"
+          emphasized={summary.reachedMastery}
+          className="-top-6"
+        />
+        <h1 className="relative z-10 text-[30px] md:text-[38px] font-bold text-[#ff5c0c] leading-[1.35] narenj-goal-scale-up">
           {summary.reachedMastery
             ? 'آفرین! به تسلط کامل رسیدی:)'
             : 'یک قدم تازه برداشتی...:)'}
         </h1>
-        <p className="text-base md:text-lg text-[#1d1d1b]">
+        <p className="relative z-10 text-base md:text-lg text-[#1d1d1b]">
           <span className="font-bold">تمرین: </span>
           <span className="text-[#3c3c3c]">{summary.skill.title}</span>
         </p>
       </div>
 
-      {/* Exact 3 V3 Cream Paper Result Cards (Matches Design System V3 Page 10 & 11) */}
+      {/* Exact 3 V3 Cream Paper Result Cards with Subtle Staggered Scale-Up Entrance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-9">
         {/* Card 1: پاسخ ثبت شده (Submitted) */}
-        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+        <article
+          className="narenj-cream-card narenj-card-pop p-5 flex flex-col justify-between min-h-[250px]"
+          style={{ animationDelay: '40ms' }}
+        >
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="submitted" />
             <img
@@ -175,7 +185,10 @@ export function SessionSummary({
         </article>
 
         {/* Card 2: پاسخ درست (Correct) */}
-        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+        <article
+          className="narenj-cream-card narenj-card-pop p-5 flex flex-col justify-between min-h-[250px]"
+          style={{ animationDelay: '120ms' }}
+        >
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="correct" />
             <img
@@ -194,7 +207,10 @@ export function SessionSummary({
         </article>
 
         {/* Card 3: پاسخ نیازمند توجه (Needs Attention — pedagogical, non-punitive!) */}
-        <article className="narenj-cream-card p-5 flex flex-col justify-between min-h-[250px]">
+        <article
+          className="narenj-cream-card narenj-card-pop p-5 flex flex-col justify-between min-h-[250px]"
+          style={{ animationDelay: '200ms' }}
+        >
           <div className="flex items-start justify-between gap-2 px-1 pt-1">
             <V3CornerBadge variant="attention" />
             <img
@@ -216,7 +232,19 @@ export function SessionSummary({
       {/* Learning Progress & Secondary Reward Strip (Per P-12: Result first, reward second) */}
       <div className="rounded-[24px] bg-white border border-[#e0dbce] p-5 md:p-6 mb-9 grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
         <div className="flex items-center gap-3.5">
-          <MedalIcon tier={medal.tier} size={36} />
+          <div
+            className="relative inline-flex items-center justify-center shrink-0 narenj-goal-scale-up"
+            style={{ animationDelay: '240ms' }}
+          >
+            {medal.tier !== 'none' && (
+              <span
+                aria-hidden="true"
+                className="narenj-halo-ring absolute inset-0 rounded-full border-2 border-[#f5e211] pointer-events-none"
+                style={{ animationDelay: '240ms' }}
+              />
+            )}
+            <MedalIcon tier={medal.tier} size={36} />
+          </div>
           <div>
             <p className="text-xs text-[#686562]">امتیاز هوشمند تسلط</p>
             <p className="text-lg font-bold text-[#1d1d1b] tabular-nums">

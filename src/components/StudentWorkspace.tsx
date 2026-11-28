@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  Bell,
   BookOpen,
   ChevronDown,
-  ChevronLeft,
   ChevronUp,
+  Contrast,
   Home,
   LogOut,
   Search,
@@ -12,9 +13,10 @@ import {
   X,
   CheckCircle2,
   Clock,
-  Play,
+  Coins,
   ArrowLeftRight,
   Compass,
+  ZoomIn,
 } from 'lucide-react';
 import {
   ActivePracticeState,
@@ -39,6 +41,8 @@ import {
 } from './V3Stickers';
 import { PracticeSession } from './PracticeSession';
 import { SessionSummary, SessionSummaryData } from './SessionSummary';
+import { DrawerTrayGroup, MobileNavDrawer } from './MobileNavDrawer';
+import { StudentMasteryChart } from './StudentMasteryChart';
 
 type StudentView = 'home' | 'library' | 'progress' | 'practice' | 'summary';
 
@@ -108,9 +112,6 @@ export function StudentWorkspace({
   );
 
   const primaryAssignment = studentAssignments[0];
-  const primarySkill =
-    SKILLS_CATALOG.find((s) => s.id === (activeSession?.skillId ?? primaryAssignment?.skillIds[0])) ??
-    SKILLS_CATALOG[0];
 
   const practiceSkill =
     SKILLS_CATALOG.find((s) => s.id === activeSession?.skillId) ?? SKILLS_CATALOG[0];
@@ -121,97 +122,15 @@ export function StudentWorkspace({
     setDrawerOpen(false);
   };
 
-  const [displayedCoins, setDisplayedCoins] = useState(student.coins);
-  const [coinCelebration, setCoinCelebration] = useState<{
-    amount: number;
-    stage: 'enter' | 'visible' | 'exit';
-    pulse: boolean;
-  } | null>(null);
-  const prevCoinsRef = useRef(student.coins);
-  const celebrationTimersRef = useRef<number[]>([]);
-
-  useEffect(() => {
-    return () => {
-      celebrationTimersRef.current.forEach((id) => window.clearTimeout(id));
-    };
-  }, []);
-
-  // Smoothly roll displayed header coin balance when student.coins increases
-  useEffect(() => {
-    const startVal = prevCoinsRef.current;
-    const endVal = student.coins;
-    prevCoinsRef.current = endVal;
-
-    if (endVal <= startVal) {
-      setDisplayedCoins(endVal);
-      return;
-    }
-
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      setDisplayedCoins(endVal);
-      return;
-    }
-
-    const duration = 620;
-    const startTime = performance.now();
-    let rafId = 0;
-
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - startTime) / duration);
-      // Ease-out cubic settling curve
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayedCoins(Math.round(startVal + (endVal - startVal) * eased));
-      if (progress < 1) {
-        rafId = window.requestAnimationFrame(tick);
-      }
-    };
-
-    rafId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [student.coins]);
-
   const handleSessionFinished = (summary: SessionSummaryData) => {
     onCompleteSession(summary);
     setLastSummary(summary);
     setView('summary');
-
-    if (summary.coinsEarned > 0) {
-      celebrationTimersRef.current.forEach((id) => window.clearTimeout(id));
-      celebrationTimersRef.current = [];
-
-      setCoinCelebration({ amount: summary.coinsEarned, stage: 'enter', pulse: false });
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          setCoinCelebration({ amount: summary.coinsEarned, stage: 'visible', pulse: true });
-        });
-      });
-      const t1 = window.setTimeout(() => {
-        setCoinCelebration((prev) => (prev ? { ...prev, pulse: false } : null));
-      }, 520);
-      const t2 = window.setTimeout(() => {
-        setCoinCelebration((prev) => (prev ? { ...prev, stage: 'exit' } : null));
-      }, 2200);
-      const t3 = window.setTimeout(() => {
-        setCoinCelebration(null);
-      }, 2700);
-      celebrationTimersRef.current = [t1, t2, t3];
-    }
   };
 
   const handleSessionPaused = (saved: ActivePracticeState) => {
     onPauseSession(saved);
     setView('home');
-  };
-
-  const breadcrumbPageTitle: Record<StudentView, string> = {
-    home: 'خانه من',
-    library: 'کتابخانه مهارت‌ها',
-    progress: 'مسیر رشد من',
-    practice: 'جلسه تمرین',
-    summary: 'نتیجه تمرین',
   };
 
   // Filtered skills for STU-02 Library
@@ -264,7 +183,7 @@ export function StudentWorkspace({
           data-open={drawerOpen ? 'true' : 'false'}
           aria-expanded={drawerOpen}
           aria-label={drawerOpen ? 'بستن منوی ناوبری' : 'باز کردن منوی ناوبری'}
-          className="narenj-menu-trigger top-0 right-0 w-[78px] h-[78px] rounded-none inline-flex items-center justify-center shrink-0 cursor-pointer z-10"
+          className="narenj-menu-trigger top-0 right-0 w-16 h-16 sm:w-[78px] sm:h-[78px] rounded-none inline-flex items-center justify-center shrink-0 cursor-pointer z-10"
         >
           <span className="narenj-hamburger" aria-hidden="true">
             <span className="narenj-hamburger-bar narenj-hamburger-bar--1" />
@@ -273,10 +192,10 @@ export function StudentWorkspace({
           </span>
         </button>
 
-        <div className="max-w-[1200px] mx-auto pr-[92px] pl-5 md:pl-9 min-[1360px]:pr-9 h-[78px] flex items-center justify-between gap-4">
+        <div className="max-w-[1200px] mx-auto pr-[76px] sm:pr-[92px] min-[1240px]:pr-[72px] min-[1280px]:pr-[52px] min-[1312px]:pr-9 pl-5 md:pl-9 h-16 sm:h-[78px] flex items-center justify-between gap-4">
           {/* RTL Start Zone: Aligned with right edge of inner content components */}
           <div className="flex items-center gap-3 md:gap-5 min-w-0">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-4 min-w-0">
               <button
                 type="button"
                 onClick={() => setShowSettings(true)}
@@ -291,37 +210,13 @@ export function StudentWorkspace({
                 />
               </button>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="flex flex-col items-start gap-0.5 whitespace-nowrap leading-tight">
                   <span className="text-sm font-bold text-[#1d1d1b]">{student.firstName}</span>
-                  <span className="text-xs text-[#d5d5d4]" aria-hidden="true">
-                    /
-                  </span>
                   <span className="text-xs font-semibold text-[#686562] hidden sm:inline">
-                    {student.className}
+                    {student.className} / معلم: خانم رضایی
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* V3 Coin Callout with CSS Transition Celebration on Session Completion */}
-            <div className="hidden lg:flex items-center mr-1 relative whitespace-nowrap shrink-0">
-              <span
-                className={`narenj-coin-counter inline-flex items-center gap-1.5 text-xs font-semibold text-[#ff5c0c] tabular-nums ${
-                  coinCelebration?.pulse ? 'narenj-coin-counter--burst text-[#c74809]' : ''
-                }`}
-              >
-                تا حالا {toPersianDigits(displayedCoins)} سکه جمع کردی!
-              </span>
-
-              {coinCelebration && (
-                <span
-                  data-stage={coinCelebration.stage}
-                  aria-live="polite"
-                  className="narenj-coin-delta pointer-events-none mr-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f9f4ae] border border-[#f5e211] text-xs font-bold text-[#9e3908] tabular-nums"
-                >
-                  +{toPersianDigits(coinCelebration.amount)} سکه
-                </span>
-              )}
             </div>
           </div>
 
@@ -343,15 +238,6 @@ export function StudentWorkspace({
           </button>
         </div>
       </header>
-
-      {/* Breadcrumb positioned slightly higher, aligned with inner content right edge */}
-      <div className="w-full max-w-[1200px] mx-auto px-5 md:px-9 -mt-2 pb-1">
-        <p className="inline-flex items-center gap-1.5 text-xs text-[#686562]">
-          <span>فضای یادگیری</span>
-          <ChevronLeft className="w-3.5 h-3.5 text-[#686562] shrink-0" aria-hidden="true" />
-          <span>{breadcrumbPageTitle[view]}</span>
-        </p>
-      </div>
 
       {/* V3 Page 11 Floating Left Accessibility & Utility Rail (Official SVGs 19–22 with Curtain Hover Motion) */}
       <aside
@@ -460,256 +346,330 @@ export function StudentWorkspace({
       </aside>
 
       {/* Main Content Workspace */}
-      <main className="flex-1 w-full max-w-[1200px] mx-auto px-5 md:px-9 py-6 md:py-9">
+      <main className="flex-1 w-full max-w-[1200px] mx-auto px-5 md:pl-9 md:pr-[92px] min-[1240px]:pr-[72px] min-[1280px]:pr-[52px] min-[1312px]:pr-9 py-6 md:py-9">
         {/* ==================== STU-01: STUDENT HOME ==================== */}
         {view === 'home' && (
           <div className="space-y-10">
-            {/* Single Dominant Focal Hero Task (Resumable Session OR Primary Teacher Assignment) */}
-            <section className="narenj-cream-card p-6 md:p-9 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              <div className="lg:col-span-8 space-y-3.5">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-[#9e3908] font-semibold">
-                  <span>
-                    {activeSession
-                      ? 'تمرین نیمه‌تمام — دقیقاً از همین‌جا ادامه بده'
-                      : 'تکلیف فعال کلاس چهارم سرو'}
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span>{primarySkill.topicTitle}</span>
-                </div>
+            {/* Section 1: Cozy Blue Banner Hero + Greeting + Active Continuation Card */}
+            <section className="relative overflow-hidden rounded-[24px] bg-[#cad9f0] lg:aspect-[3585/1103] p-6 sm:p-8 lg:py-6 lg:pl-7 lg:pr-[30%] grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-center">
+              <img
+                src="/images/ui/cozy-blue-banner.webp"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none select-none absolute inset-0 w-full h-full object-contain object-top lg:object-right"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#eaf4ff]/85 via-[#c5e2ff]/35 via-45% to-transparent to-75%"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[#cad9f0]/75 lg:hidden"
+              />
 
-                <h1 className="text-[26px] md:text-[34px] font-bold text-[#1d1d1b] leading-[1.35] text-balance">
-                  {primarySkill.title}
-                </h1>
-
-                <p className="text-base text-[#3c3c3c] max-w-2xl">
-                  {primaryAssignment?.instructions ?? primarySkill.objective}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-[#686562] pt-1">
-                  <span>
-                    امتیاز فعلی:{' '}
-                    <strong className="text-[#1d1d1b] tabular-nums">
-                      {toPersianDigits(
-                        activeSession?.smartScore ?? progressMap[primarySkill.id]?.smartScore ?? 0
-                      )}{' '}
-                      از ۱۰۰
-                    </strong>
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span>
-                    زمان تقریبی: {toPersianDigits(primarySkill.estimatedMinutes)} دقیقه
-                  </span>
-                  {primaryAssignment && (
-                    <>
-                      <span aria-hidden="true">·</span>
-                      <span>مهلت: {primaryAssignment.dueDateLabel}</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="pt-2 flex flex-wrap items-center gap-3">
-                  <V3PillButton
-                    type="button"
-                    size="md"
-                    onClick={() => handleLaunchSkill(primarySkill.id, primaryAssignment?.id)}
-                  >
-                    {activeSession ? 'ادامه تمرین ذخیره شده' : 'شروع تمرین'}
-                  </V3PillButton>
-
-                  <V3PillButton
-                    type="button"
-                    size="md"
-                    variant="secondary"
-                    showArrow={false}
-                    onClick={() => setView('library')}
-                  >
-                    مشاهده همه مهارت‌ها
-                  </V3PillButton>
-                </div>
-              </div>
-
-              <div className="lg:col-span-4 flex items-center justify-center">
-                <div className="narenj-tray p-5 w-full max-w-[260px] flex flex-col items-center text-center gap-3 border border-[#e0dbce]">
-                  <img
-                    src="/images/ui/ui-23.svg"
-                    alt="استیکر هدف بعدی"
-                    className="w-24 h-24 object-contain"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div>
-                    <p className="text-sm font-bold text-[#1d1d1b]">هدف بعدی تو</p>
-                    <p className="text-xs text-[#686562] mt-0.5">
-                      با رسیدن به امتیاز ۸۰ مدال برنز این مهارت را می‌گیری
-                    </p>
+              {/* RTL Start: Student Greeting & Personal Note harmonized with banner */}
+              <div className="relative z-10 lg:col-span-5">
+                <div className="min-w-0">
+                  <h1 className="text-[28px] md:text-[34px] font-bold text-[#1d1d1b] leading-tight">
+                    سلام {student.firstName}!
+                  </h1>
+                  <div className="mt-5 text-sm md:text-base font-semibold leading-relaxed space-y-1">
+                    <p className="text-[#2c3a4f]">دیروز «تقارن» را کامل یاد گرفتی.</p>
+                    <p className="text-[#c74809] font-bold">امروز کسرها را ادامه بدهیم؟</p>
                   </div>
                 </div>
               </div>
+
+              {/* RTL End: Continue Practice Card harmonized with banner */}
+              <div className="relative z-10 lg:col-span-7">
+                {(() => {
+                  const fractionPercent =
+                    activeSession?.skillId === 'skill-fraction-area' &&
+                    activeSession.answeredCount > 0
+                      ? Math.min(100, Math.max(0, activeSession.smartScore))
+                      : 40;
+                  return (
+                    <div className="space-y-4 rounded-[22px] bg-white/95 border border-white p-5 md:p-6 shadow-[0_5px_0_0_rgba(162,188,224,0.55),0_14px_30px_rgba(31,63,117,0.1)]">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <h2 className="text-lg md:text-[21px] font-bold text-[#1d1d1b] leading-snug">
+                          جمع کسرها با مخرج برابر
+                        </h2>
+                        <span className="text-2xl md:text-[26px] font-bold text-[#ff5c0c] leading-none shrink-0 [font-variant-numeric:proportional-nums]">
+                          {toPersianDigits(fractionPercent)}٪
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5 pb-1.5">
+                        <div className="relative h-3.5 w-full rounded-full bg-[#f5f1e4] shadow-[inset_0_1px_2px_rgba(29,29,27,0.08)]">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-l from-[#8ed461] to-[#74c644] shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-all duration-300"
+                            style={{ width: `${fractionPercent}%` }}
+                          />
+                          <span
+                            className="absolute -top-0.5 -bottom-0.5 w-[2px] bg-[#1d1d1b]/65 rounded-full"
+                            style={{ insetInlineStart: '80%' }}
+                            title="نمرهٔ لازم ۸۰"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <p className="text-xs md:text-sm font-semibold text-[#686562] leading-relaxed [font-variant-numeric:proportional-nums]">
+                          {toPersianDigits(fractionPercent)} درصد از تمرین رو رفتی، مسیرت رو ادامه بده...
+                        </p>
+                      </div>
+
+                      <V3PillButton
+                        type="button"
+                        size="md"
+                        showArrow={false}
+                        className="w-full !text-lg font-semibold !rounded-[16px]"
+                        onClick={() =>
+                          handleLaunchSkill('skill-fraction-area', primaryAssignment?.id)
+                        }
+                      >
+                        ادامهٔ تمرین
+                      </V3PillButton>
+                    </div>
+                  );
+                })()}
+              </div>
             </section>
 
-            {/* Section 2: Teacher Assigned Skills (تکالیف من) */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-[22px] md:text-[26px] font-bold text-[#1d1d1b]">
-                    تکلیف‌های معلم
+            {/* Section 2: My Assignments (Image 11) + My Progress (Image 12) */}
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Image 11: تکلیف‌های من */}
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <div className="flex items-baseline gap-2.5">
+                  <h2 className="text-lg md:text-[22px] font-bold text-[#1d1d1b]">
+                    تکلیف‌های من
                   </h2>
-                  <p className="text-sm text-[#686562]">
-                    مهارت‌هایی که خانم راد برای کلاس چهارم سرو مشخص کرده است
-                  </p>
+                  <span className="text-base font-bold text-[#ff5c0c]">
+                    ۳ تا مانده
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-[#686562] tabular-nums">
-                  {toPersianDigits(studentAssignments.length)} تکلیف فعال
-                </span>
+
+                <div className="narenj-cream-card !bg-[#f5f1e4] flex-1 px-5 md:px-6 py-3 pb-5 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    {[
+                      {
+                        id: 'hw-fractions-compare',
+                        skillId: 'skill-fraction-area',
+                        title: 'مقایسهٔ کسرها',
+                        score: 60,
+                        target: 80,
+                        dueLabel: '۱۲ آذر ۱۴۰۵',
+                        status: 'pending' as const,
+                      },
+                      {
+                        id: 'hw-division',
+                        skillId: 'skill-area-mult',
+                        title: 'تقسیم بر عدد یک‌رقمی',
+                        score: 30,
+                        target: 70,
+                        dueLabel: '۲۸ آبان ۱۴۰۵',
+                        status: 'overdue' as const,
+                      },
+                      {
+                        id: 'hw-angle',
+                        skillId: 'skill-area-equal',
+                        title: 'اندازه‌گیری زاویه',
+                        score: 0,
+                        target: 80,
+                        dueLabel: '۲۰ آذر ۱۴۰۵',
+                        status: 'pending' as const,
+                      },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleLaunchSkill(item.skillId, primaryAssignment?.id)}
+                        className="w-full py-3.5 text-start flex items-start gap-5 group cursor-pointer"
+                      >
+                        <span
+                          className="w-[60px] h-[60px] rounded-[16px] bg-white border border-dashed border-[#bfbeba] shrink-0"
+                          aria-hidden="true"
+                        />
+                        <div className="flex-1 min-w-0 space-y-2.5">
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-base font-bold text-[#1d1d1b] group-hover:text-[#ff5c0c] transition-colors">
+                              {item.title}
+                            </h3>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs md:text-sm text-[#686562] tabular-nums">
+                              نمرهٔ لازم {toPersianDigits(item.target)} · {student.className} · مهلت{' '}
+                              {item.dueLabel}
+                            </p>
+                            {item.status === 'overdue' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f5e211] text-[#1d1d1b] text-xs font-semibold shrink-0">
+                                <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                <span>مهلت گذشته</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#ff705d] text-white text-xs font-semibold shrink-0">
+                                انجام نشده
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="relative h-2 w-full rounded-full bg-white">
+                            {item.score > 0 && (
+                              <div
+                                className="h-full rounded-full bg-[#8ed461]"
+                                style={{ width: `${item.score}%` }}
+                              />
+                            )}
+                            <span
+                              className="absolute -top-1 -bottom-1 w-[2px] bg-[#1d1d1b] rounded-full"
+                              style={{ insetInlineStart: `${item.target}%` }}
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 pt-4 mt-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#c74809] tabular-nums">
+                      <CheckCircle2 className="w-4 h-4 text-[#c74809] shrink-0" aria-hidden="true" />
+                      <span>۲ تکلیف را انجام داده‌ای</span>
+                    </span>
+                    <V3PillButton
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setView('library')}
+                      className="!bg-white hover:!bg-[#ff5c0c] hover:!text-white hover:!ring-[#ff5c0c] hover:!shadow-[0_3px_0_0_#c74809] [&:hover>span:last-child]:!bg-white/25 [&:hover>span:last-child]:!text-white"
+                    >
+                      دیدن همه
+                    </V3PillButton>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {studentAssignments.map((assignment) => (
-                  <article
-                    key={assignment.id}
-                    className="rounded-[24px] bg-white border border-[#e0dbce] p-5 md:p-6 flex flex-col justify-between gap-4"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2 text-xs text-[#686562]">
-                        <span>مهلت: {assignment.dueDateLabel}</span>
-                        <span>{toPersianDigits(assignment.skillIds.length)} مهارت</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-[#1d1d1b]">{assignment.title}</h3>
-                      <p className="text-sm text-[#3c3c3c]">{assignment.instructions}</p>
-                    </div>
+              {/* Image 12: پیشرفت من */}
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                <h2 className="text-lg md:text-[22px] font-bold text-[#1d1d1b]">
+                  پیشرفت من
+                </h2>
 
-                    <div className="space-y-2.5 pt-2 border-t border-[#f5f1e4]">
-                      {assignment.skillIds.map((sid) => {
-                        const sk = SKILLS_CATALOG.find((s) => s.id === sid);
-                        if (!sk) return null;
-                        const prog = progressMap[sid];
-                        const score = prog?.smartScore ?? 0;
-                        const level = getMasteryLevel(score, prog?.questionsAnswered ?? 0);
-                        const meta = MASTERY_META[level];
+                <div className="narenj-cream-card !bg-[#f5f1e4] flex-1 p-5 md:p-6 flex flex-col justify-between gap-5">
+                  <div className="space-y-5">
+                    <p className="text-sm md:text-base text-[#3c3c3c] leading-relaxed">
+                      <strong className="text-3xl font-bold text-[#1d1d1b] tracking-tight [font-variant-numeric:proportional-nums] ml-1.5 align-baseline">
+                        ۱۲
+                      </strong>
+                      <span>مهارت از ۴۸ مهارت پایهٔ چهارم را یاد گرفته‌ای.</span>
+                    </p>
+
+                    <div className="space-y-4">
+                      {[
+                        { label: 'عدد و الگو', done: 4, total: 8 },
+                        { label: 'کسرها', done: 3, total: 10 },
+                        { label: 'ضرب و تقسیم', done: 2, total: 12 },
+                        { label: 'هندسه', done: 3, total: 10 },
+                        { label: 'اندازه‌گیری', done: 0, total: 8 },
+                      ].map((row) => {
+                        const pct = Math.round((row.done / row.total) * 100);
                         return (
-                          <div
-                            key={sid}
-                            className="flex items-center justify-between gap-3 p-3 rounded-[16px] bg-[#f5f1e4]/70"
-                          >
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-[#1d1d1b] truncate">
-                                {sk.title}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs mt-0.5">
-                                <span style={{ color: meta.color }} className="font-semibold">
-                                  {meta.label}
-                                </span>
-                                <span aria-hidden="true" className="text-[#d5d5d4]">
-                                  ·
-                                </span>
-                                <span className="text-[#686562] tabular-nums">
-                                  امتیاز {toPersianDigits(score)}
-                                </span>
+                          <div key={row.label} className="space-y-1.5">
+                            <p className="text-sm font-semibold text-[#1d1d1b]">{row.label}</p>
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
+                                {pct > 0 && (
+                                  <div
+                                    className="h-full rounded-full bg-[#2ba0ff]"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                )}
                               </div>
+                              <span className="text-xs font-semibold text-[#3c3c3c] tracking-tight [font-variant-numeric:proportional-nums] whitespace-nowrap w-10 text-left shrink-0">
+                                {toPersianDigits(row.done)} از {toPersianDigits(row.total)}
+                              </span>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleLaunchSkill(sid, assignment.id)}
-                              className="h-9 px-3.5 rounded-[50px] bg-[#ff5c0c] hover:bg-[#ec5c17] text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" />
-                              <span>{score > 0 ? 'ادامه' : 'شروع'}</span>
-                            </button>
                           </div>
                         );
                       })}
                     </div>
-                  </article>
-                ))}
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <V3PillButton
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setView('library')}
+                      className="!bg-white hover:!bg-[#ff5c0c] hover:!text-white hover:!ring-[#ff5c0c] hover:!shadow-[0_3px_0_0_#c74809] [&:hover>span:last-child]:!bg-white/25 [&:hover>span:last-child]:!text-white"
+                    >
+                      دیدن مهارت‌ها
+                    </V3PillButton>
+                  </div>
+                </div>
               </div>
             </section>
 
-            {/* Section 3: Recommended Free Practice + Personal Growth Snapshot */}
-            <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 space-y-4">
-                <h2 className="text-[22px] font-bold text-[#1d1d1b]">
-                  پیشنهادهای تمرین آزاد برای تو
-                </h2>
-                <div className="space-y-3">
-                  {SKILLS_CATALOG.slice(4, 7).map((skill) => {
-                    const prog = progressMap[skill.id];
-                    const score = prog?.smartScore ?? 0;
-                    const level = getMasteryLevel(score, prog?.questionsAnswered ?? 0);
-                    return (
-                      <div
-                        key={skill.id}
-                        className="rounded-[20px] bg-white border border-[#e0dbce] px-5 py-4 flex items-center justify-between gap-4 hover:border-[#ff9d6d] transition-colors"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-xs text-[#686562] flex items-center gap-2">
-                            <span>{skill.topicTitle}</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{MASTERY_META[level].label}</span>
-                          </div>
-                          <h3 className="text-base font-bold text-[#1d1d1b] mt-0.5 truncate">
-                            {skill.title}
-                          </h3>
-                        </div>
-                        <V3PillButton
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => handleLaunchSkill(skill.id)}
-                        >
-                          تمرین
-                        </V3PillButton>
+            {/* Section 3: Recent Results (Full-width borderless 3-column row with white gaps) */}
+            <section className="space-y-4">
+              <h2 className="text-lg md:text-[22px] font-bold text-[#1d1d1b]">
+                نتیجه‌های تازه
+              </h2>
+
+              <div className="rounded-[24px] bg-white border border-[#e0dbce] p-5 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+                {[
+                  {
+                    id: 'res-symmetry',
+                    title: 'تقارن',
+                    score: 100,
+                    coins: 30,
+                    when: 'دیروز',
+                  },
+                  {
+                    id: 'res-time',
+                    title: 'ساعت و زمان',
+                    score: 85,
+                    coins: 20,
+                    when: '۳ روز پیش',
+                  },
+                  {
+                    id: 'res-mult-2d',
+                    title: 'ضرب عددهای دورقمی',
+                    score: 65,
+                    coins: 10,
+                    when: '۵ روز پیش',
+                  },
+                ].map((res, idx) => (
+                  <div
+                    key={res.id}
+                    className={`flex items-center gap-3.5 ${
+                      idx > 0
+                        ? 'pt-4 border-t border-[#e0dbce] md:pt-0 md:border-t-0 md:border-r md:border-[#e0dbce] md:pr-5'
+                        : ''
+                    }`}
+                  >
+                    <span
+                      className="w-[60px] h-[60px] rounded-[16px] bg-[#ecebe8] border border-dashed border-[#c8c6c2] shrink-0"
+                      aria-hidden="true"
+                    />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-base font-bold text-[#1d1d1b] truncate">{res.title}</h3>
+                        <span className="text-xs md:text-sm text-[#686562] shrink-0">
+                          {res.when}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Personal Growth Mastery Card (No leaderboard per Spec §6) */}
-              <div className="lg:col-span-5 narenj-cream-card p-6 flex flex-col justify-between gap-5">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-[#9e3908]">رشد فردی من</p>
-                  <h2 className="text-xl font-bold text-[#1d1d1b]">مدال‌های تسلط تو</h2>
-                  <p className="text-sm text-[#3c3c3c]">
-                    هر بار مهارت جدیدی را به امتیاز ۸۰، ۹۰ یا ۱۰۰ برسانی، مدال تازه می‌گیری.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="narenj-tray p-3.5 text-center space-y-1">
-                    <div className="flex justify-center">
-                      <MedalIcon tier="gold" size={30} />
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm text-[#3c3c3c] tabular-nums">
+                          نمرهٔ {toPersianDigits(res.score)} از ۱۰۰
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ff5c0c] text-white text-xs font-bold tabular-nums">
+                          <Coins className="w-3.5 h-3.5 text-white shrink-0" aria-hidden="true" />
+                          <span>{toPersianDigits(res.coins)} سکه گرفتی</span>
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-lg font-bold text-[#1d1d1b] tabular-nums">
-                      {toPersianDigits(masteryStats.gold)}
-                    </p>
-                    <p className="text-xs text-[#686562]">طلا (۱۰۰)</p>
                   </div>
-                  <div className="narenj-tray p-3.5 text-center space-y-1">
-                    <div className="flex justify-center">
-                      <MedalIcon tier="silver" size={30} />
-                    </div>
-                    <p className="text-lg font-bold text-[#1d1d1b] tabular-nums">
-                      {toPersianDigits(masteryStats.silver)}
-                    </p>
-                    <p className="text-xs text-[#686562]">نقره (۹۰)</p>
-                  </div>
-                  <div className="narenj-tray p-3.5 text-center space-y-1">
-                    <div className="flex justify-center">
-                      <MedalIcon tier="bronze" size={30} />
-                    </div>
-                    <p className="text-lg font-bold text-[#1d1d1b] tabular-nums">
-                      {toPersianDigits(masteryStats.bronze)}
-                    </p>
-                    <p className="text-xs text-[#686562]">برنز (۸۰)</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setView('progress')}
-                  className="text-sm font-bold text-[#ff5c0c] hover:text-[#c74809] text-start cursor-pointer"
-                >
-                  مشاهده جزئیات نردبان تسلط ←
-                </button>
+                ))}
               </div>
             </section>
           </div>
@@ -977,6 +937,12 @@ export function StudentWorkspace({
               </div>
             </div>
 
+            {/* Mastery Improvement Over Time (Recharts) */}
+            <StudentMasteryChart
+              progressMap={progressMap}
+              onSelectTopicPractice={(skillId) => handleLaunchSkill(skillId)}
+            />
+
             {/* Mastery Ladder List */}
             <section className="rounded-[24px] border border-[#e0dbce] bg-white overflow-hidden">
               <div className="px-6 py-4 bg-[#f5f1e4] flex flex-wrap items-center justify-between gap-2">
@@ -1071,106 +1037,157 @@ export function StudentWorkspace({
         )}
       </main>
 
-      {/* Slide-out Navigation Drawer (Synchronized below top-right morphing menu button) */}
-      <div
-        aria-hidden={!drawerOpen}
-        className={`fixed inset-x-0 top-[78px] bottom-0 z-30 flex transition-opacity duration-300 ${
-          drawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+      {/* Slide-out Navigation Drawer (narenj-tray aesthetic, synchronized below morphing orange menu button) */}
+      <MobileNavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        topOffsetClass="top-16 sm:top-[78px]"
+        hideHeader
+        title="منوی دانش‌آموز"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerOpen(false);
+                onSwitchToTeacherDemo();
+              }}
+              className="w-full min-h-[46px] px-3.5 rounded-[14px] bg-[#f5f1e4] hover:bg-[#e0dbce]/60 text-xs font-bold text-[#1d1d1b] flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-[#ff5c0c] shrink-0" />
+              <span>پیش‌نمایش پنل معلم (خانم راد)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerOpen(false);
+                onLogout();
+              }}
+              className="w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#9e3908] hover:bg-[#fff2eb] flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>خروج از حساب کاربری</span>
+            </button>
+          </>
+        }
       >
-        <div
-          className="fixed inset-x-0 top-[78px] bottom-0 bg-[#1d1d1b]/35"
-          onClick={() => setDrawerOpen(false)}
-          aria-hidden="true"
-        />
-        <aside
-          className={`relative z-10 w-80 max-w-[85vw] bg-white h-full shadow-2xl border-l border-[#e0dbce] p-6 flex flex-col justify-between transition-transform duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-            drawerOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="space-y-6">
-              <nav className="space-y-1.5">
-                {[
-                  { id: 'home', label: 'خانه من و تکلیف‌ها', icon: Home },
-                  { id: 'library', label: 'کتابخانه مهارت‌ها', icon: BookOpen },
-                  { id: 'progress', label: 'مسیر رشد و مدال‌ها', icon: TrendingUp },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setView(item.id as StudentView);
-                      setDrawerOpen(false);
-                    }}
-                    className={`w-full h-12 px-4 rounded-[16px] text-sm font-semibold flex items-center gap-3 transition-colors cursor-pointer ${
-                      view === item.id
-                        ? 'bg-[#fff2eb] text-[#ff5c0c]'
-                        : 'text-[#3c3c3c] hover:bg-[#f5f1e4]'
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </nav>
-
-              <div className="pt-4 border-t border-[#e0dbce] space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    setShowSettings(true);
-                  }}
-                  className="w-full h-11 px-4 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center gap-3 cursor-pointer"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>تغییر آواتار و تنظیمات</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    onReplayOnboarding();
-                  }}
-                  className="w-full h-11 px-4 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center gap-3 cursor-pointer"
-                >
-                  <Compass className="w-4 h-4" />
-                  <span>مشاهده مجدد تور راهنما</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-4 border-t border-[#e0dbce]">
+        <DrawerTrayGroup label="ناوبری اصلی">
+          <nav aria-label="منوی ناوبری دانش‌آموز" className="space-y-1">
+            {[
+              { id: 'home', label: 'خانه من و تکلیف‌ها', icon: Home },
+              { id: 'library', label: 'کتابخانه مهارت‌ها', icon: BookOpen },
+              { id: 'progress', label: 'مسیر رشد و مدال‌ها', icon: TrendingUp },
+            ].map((item) => (
               <button
+                key={item.id}
                 type="button"
                 onClick={() => {
+                  setView(item.id as StudentView);
                   setDrawerOpen(false);
-                  onSwitchToTeacherDemo();
                 }}
-                className="w-full h-11 px-4 rounded-[14px] bg-[#f5f1e4] hover:bg-[#e0dbce]/60 text-xs font-bold text-[#1d1d1b] flex items-center justify-between gap-2 cursor-pointer"
+                className={`w-full min-h-[48px] px-3.5 rounded-[14px] text-sm flex items-center gap-3 transition-colors cursor-pointer ${
+                  view === item.id
+                    ? 'bg-[#fff2eb] text-[#ff5c0c] font-bold'
+                    : 'text-[#3c3c3c] font-semibold hover:bg-[#f5f1e4]'
+                }`}
               >
-                <span className="inline-flex items-center gap-2">
-                  <ArrowLeftRight className="w-4 h-4 text-[#ff5c0c]" />
-                  <span>پیش‌نمایش پنل معلم (خانم راد)</span>
-                </span>
+                <item.icon className="w-5 h-5 shrink-0" />
+                <span>{item.label}</span>
               </button>
+            ))}
+          </nav>
+        </DrawerTrayGroup>
 
-              <button
-                type="button"
-                onClick={onLogout}
-                className="w-full h-11 px-4 rounded-[14px] text-sm font-semibold text-[#9e3908] hover:bg-[#fff2eb] flex items-center gap-3 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>خروج از حساب کاربری</span>
-              </button>
-          </div>
-        </aside>
-      </div>
+        <DrawerTrayGroup label="تنظیمات و ابزارها">
+          <button
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              setShowNotifications(true);
+              setUnreadNotifications(0);
+            }}
+            className="xl:hidden w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center justify-between gap-3 transition-colors cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-3">
+              <Bell className="w-4 h-4 text-[#ff5c0c] shrink-0" />
+              <span>اعلان‌های من</span>
+            </span>
+            {unreadNotifications > 0 && (
+              <span className="w-5 h-5 rounded-full bg-[#ff5c0c] text-white text-[11px] font-bold inline-flex items-center justify-center tabular-nums">
+                {toPersianDigits(unreadNotifications)}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              setShowSettings(true);
+            }}
+            className="w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center gap-3 transition-colors cursor-pointer"
+          >
+            <Settings className="w-4 h-4 shrink-0" />
+            <span>تغییر آواتار و تنظیمات</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleHighContrast}
+            aria-pressed={highContrast}
+            className="xl:hidden w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center justify-between gap-3 transition-colors cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-3">
+              <Contrast className="w-4 h-4 shrink-0" />
+              <span>حالت کنتراست بالا</span>
+            </span>
+            <span
+              className={`text-xs font-bold ${
+                highContrast ? 'text-[#ff5c0c]' : 'text-[#686562]'
+              }`}
+            >
+              {highContrast ? 'روشن' : 'خاموش'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleLargeText}
+            aria-pressed={largeText}
+            className="xl:hidden w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center justify-between gap-3 transition-colors cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-3">
+              <ZoomIn className="w-4 h-4 shrink-0" />
+              <span>بزرگ‌نمایی متن</span>
+            </span>
+            <span
+              className={`text-xs font-bold ${
+                largeText ? 'text-[#ff5c0c]' : 'text-[#686562]'
+              }`}
+            >
+              {largeText ? 'روشن' : 'خاموش'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              onReplayOnboarding();
+            }}
+            className="w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#3c3c3c] hover:bg-[#f5f1e4] flex items-center gap-3 transition-colors cursor-pointer"
+          >
+            <Compass className="w-4 h-4 shrink-0" />
+            <span>مشاهده مجدد تور راهنما</span>
+          </button>
+        </DrawerTrayGroup>
+      </MobileNavDrawer>
 
       {/* Notifications Popover */}
       {showNotifications && (
         <div
-          className="fixed left-16 top-1/2 -translate-y-1/2 z-40 w-80 bg-white rounded-[22px] border border-[#e0dbce] shadow-xl p-5 space-y-3"
+          className="fixed left-4 right-4 sm:left-16 sm:right-auto top-20 sm:top-1/2 sm:-translate-y-1/2 z-40 sm:w-80 bg-white rounded-[22px] border border-[#e0dbce] shadow-xl p-5 space-y-3"
           role="dialog"
           aria-label="اعلان‌های یادگیری"
         >

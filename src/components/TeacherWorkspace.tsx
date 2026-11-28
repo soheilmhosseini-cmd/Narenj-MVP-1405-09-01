@@ -29,6 +29,7 @@ import {
 } from '../data/narenjData';
 import { NarenjBrandMark, V3PillButton } from './V3Stickers';
 import { WeeklyActivityChart } from './WeeklyActivityChart';
+import { DrawerTrayGroup, MobileNavDrawer } from './MobileNavDrawer';
 
 type TeacherView = 'home' | 'library' | 'assignments' | 'builder' | 'tracking' | 'analytics';
 
@@ -55,6 +56,7 @@ export function TeacherWorkspace({
   const [previewSkill, setPreviewSkill] = useState<SkillRecord | null>(null);
   const [analyticsWindow, setAnalyticsWindow] = useState<'7d' | '30d' | 'term'>('7d');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // TCH-11 Assignment Builder State (3-step wizard with mandatory Review step)
   const [builderStep, setBuilderStep] = useState<1 | 2 | 3>(1);
@@ -160,15 +162,42 @@ export function TeacherWorkspace({
 
   const selectedStudentReport = studentsInClass.find((s) => s.id === selectedStudentId) ?? null;
 
+  const teacherNavItems = [
+    { id: 'home', label: 'نمای امروز', icon: Home },
+    { id: 'library', label: 'کتابخانه مهارت‌ها', icon: BookOpen },
+    { id: 'assignments', label: 'تکلیف‌ها', icon: ClipboardList },
+    { id: 'analytics', label: 'تحلیل کلاس', icon: BarChart3 },
+  ] as const;
+
+  const isNavItemActive = (itemId: (typeof teacherNavItems)[number]['id']) =>
+    view === itemId ||
+    (itemId === 'assignments' && (view === 'tracking' || view === 'builder'));
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Teacher Header — Clean 3-Zone Top Bar Contract + Single Active Class Switcher */}
+      {/* Teacher Header — Clean 3-Zone Top Bar on Desktop + Single-Row Compact Bar with Slide-Out Drawer on Mobile */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-[#e0dbce]">
-        <div className="max-w-[1280px] mx-auto px-5 md:px-8 h-[76px] flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 lg:h-[76px] flex items-center justify-between gap-4 lg:gap-6">
+          <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+            {/* Mobile Slide-Out Drawer Trigger (replaces mobile top-bar navigation) */}
+            <button
+              type="button"
+              onClick={() => setMobileDrawerOpen((prev) => !prev)}
+              data-open={mobileDrawerOpen ? 'true' : 'false'}
+              aria-expanded={mobileDrawerOpen}
+              aria-label={mobileDrawerOpen ? 'بستن منوی معلم' : 'باز کردن منوی معلم'}
+              className="lg:hidden narenj-mobile-trigger w-11 h-11 min-w-[44px] min-h-[44px] rounded-[14px] bg-[#ff5c0c] hover:bg-[#ec5c17] active:bg-[#c74809] text-white shadow-[0_3px_0_0_#c74809] inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            >
+              <span className="narenj-hamburger scale-[0.82]" aria-hidden="true">
+                <span className="narenj-hamburger-bar narenj-hamburger-bar--1" />
+                <span className="narenj-hamburger-bar narenj-hamburger-bar--2" />
+                <span className="narenj-hamburger-bar narenj-hamburger-bar--3" />
+              </span>
+            </button>
+
             <NarenjBrandMark compact />
-            <span className="h-6 w-px bg-[#e0dbce] hidden sm:block" aria-hidden="true" />
-            {/* Single Active Class Context Switcher (Spec §7 & §13.2) */}
+            <span className="h-6 w-px bg-[#e0dbce] hidden lg:block" aria-hidden="true" />
+            {/* Single Active Class Context Switcher (Desktop Top Bar; Mobile lives inside Drawer) */}
             <label className="sr-only" htmlFor="class-switcher">
               انتخاب کلاس فعال
             </label>
@@ -179,7 +208,7 @@ export function TeacherWorkspace({
                 setActiveClassId(e.target.value);
                 setSelectedStudentId(null);
               }}
-              className="h-10 px-3.5 rounded-[14px] bg-[#f5f1e4] border border-[#e0dbce] text-sm font-bold text-[#1d1d1b] cursor-pointer"
+              className="hidden lg:block h-10 px-3.5 rounded-[14px] bg-[#f5f1e4] border border-[#e0dbce] text-sm font-bold text-[#1d1d1b] cursor-pointer"
             >
               {teacher.classes.map((cls) => (
                 <option key={cls.id} value={cls.id}>
@@ -193,14 +222,7 @@ export function TeacherWorkspace({
             aria-label="منوی اصلی معلم"
             className="hidden lg:flex items-center gap-6 text-sm font-semibold text-[#3c3c3c]"
           >
-            {(
-              [
-                { id: 'home', label: 'نمای امروز', icon: Home },
-                { id: 'library', label: 'کتابخانه مهارت‌ها', icon: BookOpen },
-                { id: 'assignments', label: 'تکلیف‌ها', icon: ClipboardList },
-                { id: 'analytics', label: 'تحلیل کلاس', icon: BarChart3 },
-              ] as const
-            ).map((item) => (
+            {teacherNavItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -209,8 +231,7 @@ export function TeacherWorkspace({
                   setSelectedStudentId(null);
                 }}
                 className={`py-1.5 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  view === item.id ||
-                  (item.id === 'assignments' && (view === 'tracking' || view === 'builder'))
+                  isNavItemActive(item.id)
                     ? 'text-[#ff5c0c] border-[#ff5c0c]'
                     : 'border-transparent hover:text-[#1d1d1b]'
                 }`}
@@ -220,7 +241,7 @@ export function TeacherWorkspace({
             ))}
           </nav>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 lg:gap-3 shrink-0">
             <V3PillButton
               type="button"
               size="sm"
@@ -235,46 +256,21 @@ export function TeacherWorkspace({
               type="button"
               onClick={onSwitchToStudentDemo}
               title="مشاهده فضای دانش‌آموز (ماهور)"
-              className="h-10 px-3 rounded-[14px] bg-[#f5f1e4] hover:bg-[#e0dbce]/70 text-xs font-bold text-[#1d1d1b] inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+              className="hidden lg:inline-flex h-10 px-3 rounded-[14px] bg-[#f5f1e4] hover:bg-[#e0dbce]/70 text-xs font-bold text-[#1d1d1b] items-center gap-1.5 whitespace-nowrap cursor-pointer"
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-[#ff5c0c]" />
-              <span className="hidden sm:inline">نمای دانش‌آموز</span>
+              <span>نمای دانش‌آموز</span>
             </button>
 
             <button
               type="button"
               onClick={onLogout}
               aria-label="خروج از حساب معلم"
-              className="w-10 h-10 rounded-[14px] hover:bg-[#fff2eb] text-[#686562] hover:text-[#9e3908] inline-flex items-center justify-center cursor-pointer"
+              className="hidden lg:inline-flex w-10 h-10 rounded-[14px] hover:bg-[#fff2eb] text-[#686562] hover:text-[#9e3908] items-center justify-center cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-        </div>
-
-        {/* Mobile Tab Bar */}
-        <div className="flex lg:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
-          {(
-            [
-              { id: 'home', label: 'نمای امروز' },
-              { id: 'library', label: 'کتابخانه' },
-              { id: 'assignments', label: 'تکلیف‌ها' },
-              { id: 'analytics', label: 'تحلیل کلاس' },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setView(item.id)}
-              className={`px-3.5 py-1.5 rounded-[50px] text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
-                view === item.id
-                  ? 'bg-[#ff5c0c] text-white'
-                  : 'bg-[#f5f1e4] text-[#3c3c3c]'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
         </div>
       </header>
 
@@ -1331,6 +1327,127 @@ export function TeacherWorkspace({
           </div>
         </div>
       )}
+
+      {/* Mobile Slide-Out Navigation Drawer (narenj-tray aesthetic, replaces mobile top-bar navigation) */}
+      <MobileNavDrawer
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        visibilityClass="lg:hidden"
+        title="منوی پنل معلم"
+        headerSlot={
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={teacherAvatarSrc}
+              alt={teacher.fullName}
+              className="w-10 h-10 rounded-full bg-[#f5f1e4] border border-[#e0dbce] p-1 object-contain shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#1d1d1b] truncate">{teacher.fullName}</p>
+              <p className="text-xs font-semibold text-[#686562] truncate">{activeClass.name}</p>
+            </div>
+          </div>
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileDrawerOpen(false);
+                onSwitchToStudentDemo();
+              }}
+              className="w-full min-h-[46px] px-3.5 rounded-[14px] bg-[#f5f1e4] hover:bg-[#e0dbce]/60 text-xs font-bold text-[#1d1d1b] flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-[#ff5c0c] shrink-0" />
+              <span>مشاهده نمای دانش‌آموز (ماهور)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileDrawerOpen(false);
+                onLogout();
+              }}
+              className="w-full min-h-[46px] px-3.5 rounded-[14px] text-sm font-semibold text-[#9e3908] hover:bg-[#fff2eb] flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>خروج از حساب معلم</span>
+            </button>
+          </>
+        }
+      >
+        <DrawerTrayGroup label="ناوبری اصلی">
+          <nav aria-label="منوی موبایل معلم" className="space-y-1">
+            {teacherNavItems.map((item) => {
+              const active = isNavItemActive(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setView(item.id);
+                    setSelectedStudentId(null);
+                    setMobileDrawerOpen(false);
+                  }}
+                  className={`w-full min-h-[48px] px-3.5 rounded-[14px] text-sm flex items-center gap-3 transition-colors cursor-pointer ${
+                    active
+                      ? 'bg-[#fff2eb] text-[#ff5c0c] font-bold'
+                      : 'text-[#3c3c3c] font-semibold hover:bg-[#f5f1e4]'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </DrawerTrayGroup>
+
+        <DrawerTrayGroup label="انتخاب کلاس فعال">
+          <div className="space-y-1">
+            {teacher.classes.map((cls) => {
+              const selected = cls.id === activeClassId;
+              return (
+                <button
+                  key={cls.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveClassId(cls.id);
+                    setSelectedStudentId(null);
+                    setMobileDrawerOpen(false);
+                  }}
+                  className={`w-full min-h-[46px] px-3.5 rounded-[14px] text-sm flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    selected
+                      ? 'bg-[#fff2eb] text-[#1d1d1b] font-bold'
+                      : 'text-[#3c3c3c] font-semibold hover:bg-[#f5f1e4]'
+                  }`}
+                >
+                  <span className="truncate">
+                    {cls.name}{' '}
+                    <span className="text-xs font-normal text-[#686562] tabular-nums">
+                      ({toPersianDigits(cls.studentCount)} نفر)
+                    </span>
+                  </span>
+                  {selected && <Check className="w-4 h-4 text-[#ff5c0c] shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </DrawerTrayGroup>
+
+        <div className="pt-1">
+          <V3PillButton
+            type="button"
+            size="md"
+            className="w-full"
+            onClick={() => {
+              setMobileDrawerOpen(false);
+              openBuilderWithPreset({});
+            }}
+          >
+            ایجاد تکلیف جدید
+          </V3PillButton>
+        </div>
+      </MobileNavDrawer>
     </div>
   );
 }
